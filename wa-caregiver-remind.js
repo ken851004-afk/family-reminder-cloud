@@ -107,7 +107,14 @@ function buildCaregiverMsg(r, type) {
   msg += `📅 ${formatDate(r.date)}（星期${getWeekDay(r.date)}）${r.time && r.time !== '00:00' ? ' ' + r.time : ''}\n`;
   if (r.address) msg += `📍 ${r.address}\n`;
   if (r.note) msg += `📝 ${r.note}\n`;
-  msg += `\n👤 照顧者：${r.caregiver}\n`;
+  
+  // Show "全部人" if caregiver is 'ALL'
+  if (r.caregiver === 'ALL') {
+    msg += `\n👥 照顧者：全部人\n`;
+  } else {
+    msg += `\n👤 照顧者：${r.caregiver}\n`;
+  }
+  
   msg += `🌐 查看全部：https://b791d247cb6640908835e5bd7d0454a9.app.codebuddy.work`;
   return msg;
 }
@@ -141,7 +148,11 @@ async function main() {
   let dataChanged = false;
 
   for (const r of reminders) {
-    if (!r.caregiver || !CAREGIVER_PHONES[r.caregiver]) continue;
+    // Skip if no caregiver specified
+    if (!r.caregiver) continue;
+    
+    // Skip if caregiver is specified but not in our phone list (and not 'ALL')
+    if (r.caregiver !== 'ALL' && !CAREGIVER_PHONES[r.caregiver]) continue;
     
     const eventDate = r.date; // YYYY-MM-DD
     const eventTime = r.time || '09:00';
@@ -243,21 +254,45 @@ async function main() {
 
       if (connection === 'open') {
         console.log('[WA] Connected! Sending notifications...');
+        
         for (const item of toNotify) {
-          const care = CAREGIVER_PHONES[item.reminder.caregiver];
-          if (!care) { console.log(`[SKIP] No phone for ${item.reminder.caregiver}`); continue; }
+          const reminder = item.reminder;
           
-          const jid = care.phone + '@s.whatsapp.net';
-          const msg = buildCaregiverMsg(item.reminder, item.type);
-          
-          try {
-            await sock.sendMessage(jid, { text: msg });
-            console.log(`[SENT] ${item.reminder.name} → ${care.name} (${care.phone}) [${item.type}]`);
-            sent++;
-            // Small delay between messages
-            await new Promise(r => setTimeout(r, 1500));
-          } catch(e) {
-            console.error(`[FAIL] ${item.reminder.name} → ${care.name}: ${e.message}`);
+          // If caregiver is 'ALL', send to all caregivers
+          if (reminder.caregiver === 'ALL') {
+            console.log(`[ALL] Sending to all caregivers: ${reminder.name}`);
+            
+            for (const [careName, careInfo] of Object.entries(CAREGIVER_PHONES)) {
+              const jid = careInfo.phone + '@s.whatsapp.net';
+              const msg = buildCaregiverMsg(reminder, item.type);
+              
+              try {
+                await sock.sendMessage(jid, { text: msg });
+                console.log(`[SENT-ALL] ${reminder.name} → ${careInfo.name} (${careInfo.phone}) [${item.type}]`);
+                sent++;
+                // Small delay between messages
+                await new Promise(r => setTimeout(r, 1500));
+              } catch(e) {
+                console.error(`[FAIL-ALL] ${reminder.name} → ${careInfo.name}: ${e.message}`);
+              }
+            }
+          } else {
+            // Send to single caregiver (original logic)
+            const care = CAREGIVER_PHONES[reminder.caregiver];
+            if (!care) { console.log(`[SKIP] No phone for ${reminder.caregiver}`); continue; }
+            
+            const jid = care.phone + '@s.whatsapp.net';
+            const msg = buildCaregiverMsg(reminder, item.type);
+            
+            try {
+              await sock.sendMessage(jid, { text: msg });
+              console.log(`[SENT] ${reminder.name} → ${care.name} (${care.phone}) [${item.type}]`);
+              sent++;
+              // Small delay between messages
+              await new Promise(r => setTimeout(r, 1500));
+            } catch(e) {
+              console.error(`[FAIL] ${reminder.name} → ${care.name}: ${e.message}`);
+            }
           }
         }
         
