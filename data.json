@@ -1,5 +1,17 @@
 {
-  "reminders": [],
+  "reminders": [
+    {
+      "id": "r1782048973233opw",
+      "notified": false,
+      "name": "優材",
+      "date": "2026-06-28",
+      "time": "16:00",
+      "category": "school",
+      "caregiver": "",
+      "note": "",
+      "repeat": "none"
+    }
+  ],
   "birthdays": [
     {
       "name": "EPPIE",
