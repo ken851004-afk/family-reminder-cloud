@@ -22,7 +22,7 @@ const DATA_FILE = path.join(__dirname, 'data.json');
 const SESSION_DIR = path.join('/tmp', 'wa-session');
 const CLOUD_DATA_URL = 'https://jsonblob.com/api/jsonBlob/019ee8ad-ccec-7046-97c1-72cc323fb503';
 const CLOUD_CREDS_URL = 'https://jsonblob.com/api/jsonBlob/019ee8ca-5e4d-7487-a0d8-1f95a25c0afa';
-const WEB_URL = 'https://family-reminder.onrender.com'; // 部署後更新
+const WEB_URL = process.env.RENDER_EXTERNAL_URL || `http://localhost:${PORT}`;
 
 const CAT_ICONS = { school: '\u{1F3EB}', class: '\u{1F3A8}', special: '\u{2B50}', summer: '\u{2600}\u{FE0F}', routine: '\u{1F4C5}' };
 const CAT_NAMES = { school: '\u{5B78}\u{6821}\u{9762}\u{8A66}', class: '\u{8208}\u{8DA3}\u{73ED}', special: '\u{7279}\u{5225}\u{65E5}\u{5B50}', summer: '\u{6691}\u{671F}\u{5B89}\u{6392}', routine: '\u{6052}\u{5E38}\u{65E5}\u{7A0B}' };
@@ -609,7 +609,7 @@ async function sendDailyReminder() {
     upcoming.forEach(u => { summary += `\n${buildReminderMsg(u, u.daysUntil)}`; });
   }
 
-  const baseUrl = `http://localhost:${PORT}`;
+  const baseUrl = WEB_URL;
   summary += `\n\n\u{1F310} \u7DB2\u9801\u67E5\u770B\uFF1A${baseUrl}`;
   summary += `\n\u{1F4AC} WhatsApp \u7FA4\u7D44\u76F4\u63A5\u6307\u4EE4\uFF1A+ \u4E8B\u9805 / - \u4E8B\u9805 / \u63D0\u9192 / \u5E6B\u52A9`;
 
