@@ -132,6 +132,7 @@ function buildReminderMsg(r, daysUntil) {
   if (repeatText) msg += `\n　　🔁 ${repeatText}`;
   if (r.caregiver) msg += `\n　　👤 ${r.caregiver}`;
   if (r.note) msg += `\n　　📝 ${r.note}`;
+  if (r.address) msg += `\n　　📍 ${r.address}`;
   return msg;
 }
 
