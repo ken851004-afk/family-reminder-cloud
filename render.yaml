@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: family-reminder
+    runtime: node
+    plan: free
+    region: singapore
+    buildCommand: npm install
+    startCommand: node cloud-server.js
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+    autoDeploy: true

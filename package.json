@@ -1,0 +1,19 @@
+{
+  "name": "family-reminder-cloud",
+  "version": "1.0.0",
+  "description": "家庭提醒系統 - 雲端三合一服務 (API + WhatsApp + Web)",
+  "main": "cloud-server.js",
+  "scripts": {
+    "start": "node cloud-server.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "baileys": "^6.7.0",
+    "qrcode": "^1.5.3",
+    "pino": "^9.0.0",
+    "node-cache": "^5.1.2",
+    "link-preview-js": "^3.0.0"
+  }
+}
