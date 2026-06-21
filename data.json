@@ -1,40 +1,16 @@
 {
-  "reminders": {
-    "reminders": [],
-    "birthdays": [
-      {
-        "name": "EPPIE",
-        "date": "??-??",
-        "note": ""
-      },
-      {
-        "name": "KEN",
-        "date": "??-??",
-        "note": ""
-      },
-      {
-        "name": "COFFE",
-        "date": "??-??",
-        "note": ""
-      },
-      {
-        "name": "XingHuaCun",
-        "date": "??-??",
-        "note": ""
-      }
-    ],
-    "members": [
-      "EPPIE",
-      "KEN",
-      "COFFE",
-      "XingHuaCun"
-    ],
-    "caregivers": [
-      "EPPIE",
-      "KEN",
-      "COFFE",
-      "XingHuaCun"
-    ]
-  },
+  "reminders": [
+    {
+      "id": "r1782031274868tn8",
+      "notified": false,
+      "name": "優才",
+      "date": "2026-06-28",
+      "time": "16:00",
+      "category": "school",
+      "caregiver": "KEN",
+      "note": "",
+      "repeat": "none"
+    }
+  ],
   "birthdays": []
 }
