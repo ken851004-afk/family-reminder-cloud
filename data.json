@@ -61,12 +61,13 @@
       "date": "2026-06-22",
       "time": "08:30",
       "category": "class",
-      "caregiver": "",
+      "caregiver": "EPPIE",
       "note": "最後4堂",
       "repeat": "weekly",
       "repeatDays": [
         1
-      ]
+      ],
+      "address": ""
     },
     {
       "id": "r1782033786303xqe",
