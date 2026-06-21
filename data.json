@@ -63,6 +63,20 @@
       "repeatDays": [
         4
       ]
+    },
+    {
+      "id": "r1782033717733yq3",
+      "notified": false,
+      "name": "Ms Nita",
+      "date": "2026-06-22",
+      "time": "08:30",
+      "category": "class",
+      "caregiver": "",
+      "note": "",
+      "repeat": "weekly",
+      "repeatDays": [
+        1
+      ]
     }
   ],
   "birthdays": [
