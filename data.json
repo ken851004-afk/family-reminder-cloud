@@ -99,6 +99,17 @@
       "caregiver": "EPPIE",
       "note": "時間待定",
       "repeat": "none"
+    },
+    {
+      "id": "r17820338720444q5",
+      "notified": false,
+      "name": "Jarvis生日會",
+      "date": "2026-08-30",
+      "time": "13:00",
+      "category": "special",
+      "caregiver": "EPPIE",
+      "note": "樂富冒險樂園",
+      "repeat": "none"
     }
   ],
   "birthdays": [
