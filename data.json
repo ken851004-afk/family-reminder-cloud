@@ -9,16 +9,6 @@
       "caregiver": "KEN",
       "notified": false,
       "id": "r17820258440301tfh"
-    },
-    {
-      "id": "test-gh-api",
-      "name": "🔧 API測試",
-      "category": "special",
-      "date": "2026-06-22",
-      "time": "10:00",
-      "note": "GitHub API寫入測試",
-      "caregiver": "KEN",
-      "notified": false
     }
   ],
   "birthdays": [
