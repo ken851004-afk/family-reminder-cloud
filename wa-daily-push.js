@@ -1,10 +1,6 @@
 /**
  * GitHub Actions: 每日 WhatsApp 提醒推送
- * 
- * 环境变量:
- * - WA_CREDS_B64: base64 编码的 creds.json
- * - WA_GROUP_ID: WhatsApp 群组 ID
- * - JSONBLOB_ID: jsonblob.com blob ID
+ * 直接從 GitHub API 讀取 data.json（唔使 jsonblob）
  */
 
 const { makeWASocket, useMultiFileAuthState, fetchLatestBaileysVersion } = require('baileys');
@@ -14,23 +10,42 @@ const path = require('path');
 const NodeCache = require('node-cache');
 
 const GROUP_ID = process.env.WA_GROUP_ID;
-const JSONBLOB_ID = process.env.JSONBLOB_ID;
-const SESSION_DIR = '/tmp/wa-session';
+const GITHUB_TOKEN = process.env.GITHUB_TOKEN || process.env.GH_PAT;
+const GITHUB_REPO = 'ken851004-afk/family-reminder-cloud';
 
-const CAT_ICONS = { school: '\u{1F3EB}', class: '\u{1F3A8}', special: '\u{2B50}', summer: '\u{2600}\u{FE0F}', routine: '\u{1F4C5}' };
+const CAT_ICONS = { school: '🏫', class: '🎨', special: '⭐', summer: '☀️', routine: '📅' };
 const CAT_NAMES = { school: '學校面試', class: '興趣班', special: '特別日子', summer: '暑期安排', routine: '恆常日程' };
 const DAY_NAMES = ['日','一','二','三','四','五','六'];
 
-function httpsGet(url) {
+function githubApiGet(path) {
   return new Promise((resolve, reject) => {
-    https.get(url, (res) => {
-      let data = '';
-      res.on('data', c => data += c);
+    const opts = {
+      hostname: 'api.github.com',
+      path: '/repos/' + GITHUB_REPO + '/contents/' + path,
+      method: 'GET',
+      headers: {
+        'Authorization': 'Bearer ' + GITHUB_TOKEN,
+        'Accept': 'application/vnd.github.v3+json',
+        'User-Agent': 'node'
+      }
+    };
+    const req = https.request(opts, res => {
+      let b = '';
+      res.on('data', c => b += c);
       res.on('end', () => {
-        try { resolve(JSON.parse(data)); }
-        catch(e) { resolve(null); }
+        try {
+          const j = JSON.parse(b);
+          if (j.content) {
+            const content = Buffer.from(j.content.replace(/\n/g, ''), 'base64').toString('utf-8');
+            resolve(JSON.parse(content));
+          } else {
+            reject(new Error('GitHub API error: ' + (j.message || 'unknown')));
+          }
+        } catch(e) { reject(e); }
       });
-    }).on('error', reject);
+    });
+    req.on('error', reject);
+    req.end();
   });
 }
 
@@ -104,19 +119,19 @@ function getRepeatText(r) {
 }
 
 function buildReminderMsg(r, daysUntil) {
-  const icon = CAT_ICONS[r.category] || '\u{1F4CC}';
+  const icon = CAT_ICONS[r.category] || '📌';
   const catName = CAT_NAMES[r.category] || '其他';
   const repeatText = getRepeatText(r);
   let prefix;
-  if (daysUntil === 0) prefix = '\u{1F534} 今日';
-  else if (daysUntil === 1) prefix = '\u{1F7E1} 明日';
-  else if (daysUntil <= 3) prefix = `\u{1F7E0} ${daysUntil}日後`;
-  else prefix = `\u{1F7E2} ${daysUntil}日後`;
+  if (daysUntil === 0) prefix = '🔴 今日';
+  else if (daysUntil === 1) prefix = '🟠 明日';
+  else if (daysUntil <= 3) prefix = `🟡 ${daysUntil}日後`;
+  else prefix = `🟢 ${daysUntil}日後`;
   let msg = `${prefix} ${icon}【${catName}】${r.name}`;
-  msg += `\n　　\u{1F4C5} ${formatDate(r._displayDate || r.date)}（星期${getWeekDay(r._displayDate || r.date)}）${r.time !== '00:00' ? ' ' + r.time : ''}`;
-  if (repeatText) msg += `\n　　\u{1F501} ${repeatText}`;
-  if (r.caregiver) msg += `\n　　\u{1F464} ${r.caregiver}`;
-  if (r.note) msg += `\n　　\u{1F4DD} ${r.note}`;
+  msg += `\n　　📅 ${formatDate(r._displayDate || r.date)}（星期${getWeekDay(r._displayDate || r.date)}）${r.time !== '00:00' ? ' ' + r.time : ''}`;
+  if (repeatText) msg += `\n　　🔁 ${repeatText}`;
+  if (r.caregiver) msg += `\n　　👤 ${r.caregiver}`;
+  if (r.note) msg += `\n　　📝 ${r.note}`;
   return msg;
 }
 
@@ -143,23 +158,26 @@ async function main() {
     process.exit(1);
   }
   const credsJson = Buffer.from(process.env.WA_CREDS_B64, 'base64').toString('utf8');
+  const SESSION_DIR = '/tmp/wa-session';
   if (!fs.existsSync(SESSION_DIR)) fs.mkdirSync(SESSION_DIR, { recursive: true });
   fs.writeFileSync(path.join(SESSION_DIR, 'creds.json'), credsJson);
   console.log('[WA] creds.json written');
 
-  // 2. Fetch data from jsonblob
-  const dataUrl = `https://jsonblob.com/api/jsonBlob/${JSONBLOB_ID}`;
-  const data = await httpsGet(dataUrl);
-  if (!data || !data.reminders) {
-    console.error('[DATA] Failed to fetch data from jsonblob');
+  // 2. Fetch data from GitHub API directly
+  console.log('[DATA] Fetching data.json from GitHub API...');
+  let data;
+  try {
+    data = await githubApiGet('data.json');
+  } catch(e) {
+    console.error('[DATA] Failed to fetch from GitHub:', e.message);
     process.exit(1);
   }
-  console.log(`[DATA] Loaded ${data.reminders.length} reminders, ${data.birthdays?.length || 0} birthdays`);
+  console.log(`[DATA] Loaded ${data.reminders?.length || 0} reminders, ${data.birthdays?.length || 0} birthdays`);
 
   // 3. Build reminder message
   const today = new Date(); today.setHours(0,0,0,0);
   const upcoming = [];
-  for (const r of data.reminders) {
+  for (const r of (data.reminders || [])) {
     const dates = getRecurringDates(r, today, 7);
     dates.forEach(date => {
       const daysUntil = getDaysUntil(date);
@@ -178,24 +196,24 @@ async function main() {
   }
 
   const dateStr = `${today.getFullYear()}/${String(today.getMonth()+1).padStart(2,'0')}/${String(today.getDate()).padStart(2,'0')}`;
-  let summary = `\u{1F514} *家庭提醒 — ${dateStr}*\n`;
+  let summary = `🔔 *家庭提醒 — ${dateStr}*\n`;
 
   if (birthdayUpcoming.length > 0) {
-    summary += `\n\u{1F382} *生日提醒：*\n`;
+    summary += `\n🎂 *生日提醒：*\n`;
     birthdayUpcoming.forEach(b => {
-      if (b.daysAway === 0) summary += `\u{1F534} 今日係 *${b.name}* 生日！\u{1F389}\u{1F381}\n`;
-      else if (b.daysAway === 1) summary += `\u{1F7E1} 明日係 *${b.name}* 生日！（${b.date}）\n`;
-      else summary += `\u{1F7E2} ${b.daysAway}日後：*${b.name}* 生日（${b.date}）\n`;
+      if (b.daysAway === 0) summary += `🔴 今日係 *${b.name}* 生日！🎉🎁\n`;
+      else if (b.daysAway === 1) summary += `🟠 明日係 *${b.name}* 生日！（${b.date}）\n`;
+      else summary += `🟡 ${b.daysAway}日後：*${b.name}* 生日（${b.date}）\n`;
     });
   }
 
   if (upcoming.length > 0) {
-    summary += `\n\u{1F4CB} 未來7日共 ${upcoming.length} 項事項：\n`;
+    summary += `\n📋 未來7日共 ${upcoming.length} 項事項：\n`;
     upcoming.forEach(u => { summary += `\n${buildReminderMsg(u, u.daysUntil)}`; });
   }
 
-  summary += `\n\n\u{1F310} 網頁查看：https://b791d247cb6640908835e5bd7d0454a9.app.codebuddy.work`;
-  summary += `\n\u{1F4AC} WhatsApp 群組指令：+ 事項 / - 事項 / 提醒 / 幫助`;
+  summary += `\n\n🌐 網頁查看：https://b791d247cb6640908835e5bd7d0454a9.app.codebuddy.work`;
+  summary += `\n💬 WhatsApp 群組指令：+ 事項 / - 事項 / 提醒 / 幫助`;
 
   console.log('[MSG] Message prepared, length:', summary.length);
 
@@ -252,7 +270,6 @@ async function main() {
         const statusCode = lastDisconnect?.error?.output?.statusCode;
         console.log(`[WA] Closed (code: ${statusCode})`);
         if (!messageSent && statusCode !== 517 && statusCode !== 410) {
-          // Retry once
           console.log('[WA] Unexpected close, retrying...');
         } else if (!messageSent) {
           clearTimeout(timeout);
