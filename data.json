@@ -1,59 +1,40 @@
 {
-  "reminders": [
-    {
-      "name": "ï¿½ï¿½ï¿½Õ´ï¿½ï¿½ï¿½",
-      "category": "special",
-      "date": "2026-06-21",
-      "time": "15:30",
-      "note": "GitHub Actions ï¿½ï¿½ï¿½ï¿½",
-      "caregiver": "KEN",
-      "notified": false,
-      "id": "r17820258440301tfh"
-    },
-    {
-      "id": "r1782030519490i21",
-      "notified": false,
-      "name": "優才",
-      "date": "2026-06-27",
-      "time": "16:00",
-      "category": "school",
-      "caregiver": "KEN",
-      "note": "",
-      "repeat": "none"
-    }
-  ],
-  "birthdays": [
-    {
-      "name": "EPPIE",
-      "date": "??-??",
-      "note": ""
-    },
-    {
-      "name": "KEN",
-      "date": "??-??",
-      "note": ""
-    },
-    {
-      "name": "COFFE",
-      "date": "??-??",
-      "note": ""
-    },
-    {
-      "name": "XingHuaCun",
-      "date": "??-??",
-      "note": ""
-    }
-  ],
-  "members": [
-    "EPPIE",
-    "KEN",
-    "COFFE",
-    "XingHuaCun"
-  ],
-  "caregivers": [
-    "EPPIE",
-    "KEN",
-    "COFFE",
-    "XingHuaCun"
-  ]
+  "reminders": {
+    "reminders": [],
+    "birthdays": [
+      {
+        "name": "EPPIE",
+        "date": "??-??",
+        "note": ""
+      },
+      {
+        "name": "KEN",
+        "date": "??-??",
+        "note": ""
+      },
+      {
+        "name": "COFFE",
+        "date": "??-??",
+        "note": ""
+      },
+      {
+        "name": "XingHuaCun",
+        "date": "??-??",
+        "note": ""
+      }
+    ],
+    "members": [
+      "EPPIE",
+      "KEN",
+      "COFFE",
+      "XingHuaCun"
+    ],
+    "caregivers": [
+      "EPPIE",
+      "KEN",
+      "COFFE",
+      "XingHuaCun"
+    ]
+  },
+  "birthdays": []
 }
