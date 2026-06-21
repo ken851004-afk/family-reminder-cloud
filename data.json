@@ -49,6 +49,20 @@
       "repeatDays": [
         3
       ]
+    },
+    {
+      "id": "r1782033672781kcn",
+      "notified": false,
+      "name": "Oral",
+      "date": "2026-07-16",
+      "time": "12:00",
+      "category": "summer",
+      "caregiver": "KEN",
+      "note": "七，八月",
+      "repeat": "weekly",
+      "repeatDays": [
+        4
+      ]
     }
   ],
   "birthdays": [
