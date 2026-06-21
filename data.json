@@ -110,6 +110,20 @@
       "caregiver": "EPPIE",
       "note": "樂富冒險樂園",
       "repeat": "none"
+    },
+    {
+      "id": "r178205052397275z",
+      "notified": false,
+      "name": "中文",
+      "date": "2026-06-24",
+      "time": "09:00",
+      "category": "school",
+      "caregiver": "KEN",
+      "note": "",
+      "repeat": "weekly",
+      "repeatDays": [
+        3
+      ]
     }
   ],
   "birthdays": [
