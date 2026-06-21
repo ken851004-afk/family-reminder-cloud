@@ -23,5 +23,11 @@
       "repeat": "none"
     }
   ],
-  "birthdays": []
+  "birthdays": [
+    {
+      "name": "KEN",
+      "date": "04-10",
+      "note": ""
+    }
+  ]
 }
