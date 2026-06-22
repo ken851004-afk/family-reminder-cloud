@@ -123,6 +123,18 @@
       "caregiverNotified1d": false,
       "caregiverNotified3h": false,
       "address": ""
+    },
+    {
+      "id": "r17821286181912mg",
+      "notified": false,
+      "name": "上經理堂",
+      "date": "2026-07-14",
+      "time": "09:30",
+      "category": "special",
+      "caregiver": "KEN",
+      "note": "Mfc",
+      "address": "",
+      "repeat": "none"
     }
   ],
   "birthdays": [
