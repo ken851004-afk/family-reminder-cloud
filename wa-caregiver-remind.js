@@ -205,8 +205,8 @@ async function main() {
   }
 
   if (toNotify.length === 0) {
-    console.log('[CRON] No caregiver notifications needed. Exiting.');
-    process.exit(0);
+    console.log('[CRON] No caregiver notifications needed. Testing WhatsApp connection...');
+    // Continue to test WhatsApp connection (don't exit early)
   }
 
   console.log(`[CRON] ${toNotify.length} notifications to send`);
