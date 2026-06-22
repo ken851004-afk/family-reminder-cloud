@@ -146,7 +146,8 @@
       "caregiver": "KEN",
       "note": "",
       "address": "",
-      "repeat": "none"
+      "repeat": "none",
+      "caregiverNotified3h": true
     },
     {
       "id": "r1782129441286gp8",
@@ -194,7 +195,8 @@
       "caregiver": "EPPIE",
       "note": "",
       "address": "",
-      "repeat": "none"
+      "repeat": "none",
+      "caregiverNotified3h": true
     }
   ],
   "birthdays": [
