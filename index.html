@@ -175,7 +175,10 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-
           <option value="">無指定</option>
           <option value="EPPIE">EPPIE</option>
           <option value="KEN">KEN</option>
+          <option value="Kenny Yam">Kenny Yam</option>
+          <option value="Rosanna Mok">Rosanna Mok</option>
           <option value="COFFE">COFFE</option>
+          <option value="老豆">老豆</option>
         </select>
       </div>
     </div>
@@ -496,7 +499,8 @@ function openAddModal(){
   document.getElementById('edit-id').value='';
   document.getElementById('form-name').value='';
   document.getElementById('form-date').value='';
-  document.getElementById('form-time').value='09:00';
+  document.getElementById('form-time-h').value='09';
+  document.getElementById('form-time-m').value='00';
   document.getElementById('form-category').value='school';
   document.getElementById('form-caregiver').value='';
   document.getElementById('form-note').value='';
@@ -512,7 +516,6 @@ function openEditModal(id){
   document.getElementById('edit-id').value=r.id;
   document.getElementById('form-name').value=r.name;
   document.getElementById('form-date').value=r.date;
-  document.getElementById('form-time').value=r.time||'09:00';
   document.getElementById('form-category').value=r.category;
   document.getElementById('form-caregiver').value=r.caregiver||'';
   document.getElementById('form-note').value=r.note||'';
