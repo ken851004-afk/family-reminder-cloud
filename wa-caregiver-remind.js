@@ -273,10 +273,12 @@ async function main() {
         // Send group notifications (caregiver changes)
         const groupNotifs = data.groupNotifications || [];
         for (const gn of groupNotifs) {
-          const msg = `📋 *照顧者已更改*\n\n事項：${gn.reminderName}\n日期：${gn.reminderDate}\n之前：${gn.from}\n現在：${gn.to}\n\n🌐 查看全部：https://b791d247cb6640908835e5bd7d0454a9.app.codebuddy.work`;
+          const rem = data.reminders.find(r => r.name === gn.reminderName);
+          const dt = rem ? rem.date : '(不詳)';
+          const msg = `📋 *照顧者已更改*\n\n事項：${gn.reminderName}\n日期：${dt}\n之前：${gn.oldCaregiver}\n現在：${gn.newCaregiver}\n\n🌐 查看全部：https://b791d247cb6640908835e5bd7d0454a9.app.codebuddy.work`;
           try {
             await sock.sendMessage(GROUP_ID, { text: msg });
-            console.log(`[SENT-GRP] ${gn.reminderName}: ${gn.from} → ${gn.to}`);
+            console.log(`[SENT-GRP] ${gn.reminderName}: ${gn.oldCaregiver} → ${gn.newCaregiver}`);
           } catch(e) {
             console.error(`[FAIL-GRP] ${gn.reminderName}: ${e.message}`);
           }
