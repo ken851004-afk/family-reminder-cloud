@@ -76,16 +76,39 @@ function githubApiPut(apiPath, content, sha, message) {
         'Content-Length': Buffer.byteLength(body)
       }
     };
-    const req = https.request(opts, res => {
-      let b = ''; res.on('data', c => b += c);
-      res.on('end', () => {
-        if (res.statusCode >= 200 && res.statusCode < 300) resolve(JSON.parse(b));
-        else reject(new Error('GitHub PUT ' + res.statusCode + ': ' + b.substring(0, 200)));
+    const doReq = (bodyStr) => {
+      const req = https.request(opts, res => {
+        let b = ''; res.on('data', c => b += c);
+        res.on('end', () => {
+          if (res.statusCode === 409) {
+            // SHA conflict — re-fetch latest sha and retry ONCE
+            console.log('[GH] SHA conflict, re-fetching...');
+            githubApiGet(apiPath).then(fresh => {
+              const newSha = fresh.sha;
+              const newB64 = Buffer.from(JSON.stringify(content, null, 2), 'utf-8').toString('base64');
+              const newBody = JSON.stringify({ message, content: newB64, sha: newSha, branch: 'master' });
+              const req2 = https.request(opts, res2 => {
+                let b2 = ''; res2.on('data', c => b2 += c);
+                res2.on('end', () => {
+                  if (res2.statusCode >= 200 && res2.statusCode < 300) resolve(JSON.parse(b2));
+                  else reject(new Error('GitHub PUT retry ' + res2.statusCode + ': ' + b2.substring(0, 200)));
+                });
+              });
+              req2.on('error', reject);
+              req2.write(newBody);
+              req2.end();
+            }).catch(reject);
+            return;
+          }
+          if (res.statusCode >= 200 && res.statusCode < 300) resolve(JSON.parse(b));
+          else reject(new Error('GitHub PUT ' + res.statusCode + ': ' + b.substring(0, 200)));
+        });
       });
-    });
-    req.on('error', reject);
-    req.write(body);
-    req.end();
+      req.on('error', reject);
+      req.write(bodyStr);
+      req.end();
+    };
+    doReq(body);
   });
 }
 
@@ -194,22 +217,14 @@ async function main() {
     }
   }
 
-  // Save updated flags to GitHub
-  if (dataChanged) {
-    try {
-      await githubApiPut('data.json', data, sha, 'Update caregiver notification flags');
-      console.log('[DATA] Updated notification flags on GitHub');
-    } catch(e) {
-      console.error('[DATA] Failed to update flags:', e.message);
-    }
-  }
-
-  if (toNotify.length === 0) {
-    console.log('[CRON] No caregiver notifications needed. Exiting.');
+  // Check if there's anything to do
+  const groupNotifs = data.groupNotifications || [];
+  if (toNotify.length === 0 && groupNotifs.length === 0) {
+    console.log('[CRON] Nothing to do. Exiting.');
     process.exit(0);
   }
 
-  console.log(`[CRON] ${toNotify.length} notifications to send`);
+  console.log(`[CRON] ${toNotify.length} caregiver notifications + ${groupNotifs.length} group notifications to send`);
 
   // 3. Decode WhatsApp creds
   if (!process.env.WA_CREDS_B64) {
@@ -255,6 +270,24 @@ async function main() {
       if (connection === 'open') {
         console.log('[WA] Connected! Sending notifications...');
         
+        // Send group notifications (caregiver changes)
+        const groupNotifs = data.groupNotifications || [];
+        for (const gn of groupNotifs) {
+          const msg = `📋 *照顧者已更改*\n\n事項：${gn.reminderName}\n日期：${gn.reminderDate}\n之前：${gn.from}\n現在：${gn.to}\n\n🌐 查看全部：https://b791d247cb6640908835e5bd7d0454a9.app.codebuddy.work`;
+          try {
+            await sock.sendMessage(GROUP_ID, { text: msg });
+            console.log(`[SENT-GRP] ${gn.reminderName}: ${gn.from} → ${gn.to}`);
+          } catch(e) {
+            console.error(`[FAIL-GRP] ${gn.reminderName}: ${e.message}`);
+          }
+        }
+        // Clear group notifications after sending
+        if (groupNotifs.length > 0) {
+          data.groupNotifications = [];
+          dataChanged = true;
+          console.log(`[GRP] Cleared ${groupNotifs.length} group notifications`);
+        }
+        
         for (const item of toNotify) {
           const reminder = item.reminder;
           
@@ -299,6 +332,15 @@ async function main() {
         }
         
         console.log(`[WA] Done! Sent ${sent}/${target}`);
+        // Save data (updated flags + cleared group notifications)
+        if (dataChanged) {
+          try {
+            await githubApiPut('data.json', data, sha, 'Update notification flags + clear group notifications');
+            console.log('[DATA] Saved to GitHub');
+          } catch(e) {
+            console.error('[DATA] Failed to save:', e.message);
+          }
+        }
         clearTimeout(timeout);
         setTimeout(() => { sock.end(); resolve(); }, 2000);
       }
