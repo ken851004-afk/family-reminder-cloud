@@ -352,7 +352,7 @@ async function main() {
           console.log(`[PENDING] Processing ${pendingMsgs.length} ad-hoc messages`);
           for (const msg of pendingMsgs) {
             try {
-              const jid = msg.phone + '@s.whatsapp.net';
+              const jid = msg.phone.includes('@') ? msg.phone : msg.phone + '@s.whatsapp.net';
               await sock.sendMessage(jid, { text: msg.text });
               console.log(`[PENDING-SENT] → ${msg.phone}: ${msg.text.substring(0, 40)}`);
               sent++;
