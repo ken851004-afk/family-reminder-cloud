@@ -185,11 +185,5 @@
     }
   ],
   "groupNotifications": [],
-  "pendingMessages": [
-    {
-      "phone": "85262218999",
-      "text": "✅ 亂碼已修復\n\n舊URL (5fa4bc) 係完全唔同嘅舊版，無法更新\n新網址：https://49833288871e479db55ef9521bf04f60.app.codebuddy.work\n\n已使用 TextEncoder + GitHub API",
-      "at": "2026-06-23T17:42:55Z"
-    }
-  ]
+  "pendingMessages": []
 }
