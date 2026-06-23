@@ -20,8 +20,8 @@ const PORT = process.env.PORT || 3000;
 const GROUP_ID = '85262218999-1474211595@g.us';
 const DATA_FILE = path.join(__dirname, 'data.json');
 const SESSION_DIR = path.join('/tmp', 'wa-session');
-const CLOUD_DATA_URL = 'https://jsonblob.com/api/jsonBlob/019ee8ad-ccec-7046-97c1-72cc323fb503';
-const CLOUD_CREDS_URL = 'https://jsonblob.com/api/jsonBlob/019ee8ca-5e4d-7487-a0d8-1f95a25c0afa';
+const CLOUD_DATA_URL = 'https://jsonblob.com/api/jsonBlob/019ef495-3c34-718c-8bb5-1ccbb9182d66';
+const CLOUD_CREDS_URL = 'https://jsonblob.com/api/jsonBlob/019ef495-3c34-704c-a2cb-b74f2877cc28';
 const WEB_URL = process.env.RENDER_EXTERNAL_URL || `http://localhost:${PORT}`;
 
 const CAT_ICONS = { school: '\u{1F3EB}', class: '\u{1F3A8}', special: '\u{2B50}', summer: '\u{2600}\u{FE0F}', routine: '\u{1F4C5}' };
@@ -134,7 +134,7 @@ async function restoreSession() {
       console.log('[WA] 本地 session 存在');
       return true;
     }
-    // 從雲端恢復
+    // 從雲端 (jsonblob) 恢復
     console.log('[WA] 嘗試從雲端恢復 session...');
     const credsData = await httpsGet(CLOUD_CREDS_URL);
     if (credsData && credsData.creds) {
@@ -142,6 +142,20 @@ async function restoreSession() {
       fs.writeFileSync(path.join(SESSION_DIR, 'creds.json'), JSON.stringify(credsData.creds));
       console.log('[WA] \u2705 從雲端恢復 session 成功');
       return true;
+    }
+    // 從 WA_CREDS_B64 環境變數恢復 (備援)
+    if (process.env.WA_CREDS_B64) {
+      console.log('[WA] 從 WA_CREDS_B64 環境變數恢復...');
+      try {
+        const credsJson = Buffer.from(process.env.WA_CREDS_B64, 'base64').toString('utf8');
+        const creds = JSON.parse(credsJson);
+        if (!fs.existsSync(SESSION_DIR)) fs.mkdirSync(SESSION_DIR, { recursive: true });
+        fs.writeFileSync(path.join(SESSION_DIR, 'creds.json'), JSON.stringify(creds));
+        // 同時寫返 jsonblob
+        httpsPut(CLOUD_CREDS_URL, { type: 'wa-session-creds', creds }).catch(() => {});
+        console.log('[WA] \u2705 從 WA_CREDS_B64 恢復 session 成功');
+        return true;
+      } catch(e) { console.log('[WA] WA_CREDS_B64 解碼失敗:', e.message); }
     }
     console.log('[WA] 雲端無 session，需要掃描 QR Code');
     return false;
@@ -825,6 +839,56 @@ const server = http.createServer(async (req, res) => {
     writeData(data);
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ ok: true }));
+    return;
+  }
+
+  // === GET /api/backup-creds (export current WA creds as base64) ===
+  if (req.method === 'GET' && pathname === '/api/backup-creds') {
+    try {
+      const credsPath = path.join(SESSION_DIR, 'creds.json');
+      if (!fs.existsSync(credsPath)) {
+        res.writeHead(404, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'creds.json not found' }));
+        return;
+      }
+      const creds = fs.readFileSync(credsPath, 'utf8');
+      const b64 = Buffer.from(creds).toString('base64');
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ wa_creds_b64: b64, connected: waConnected }));
+    } catch(e) {
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: e.message }));
+    }
+    return;
+  }
+
+  // === POST /api/restore-creds (restore WA creds from base64) ===
+  if (req.method === 'POST' && pathname === '/api/restore-creds') {
+    let body = '';
+    req.on('data', c => body += c);
+    req.on('end', async () => {
+      try {
+        const { wa_creds_b64 } = JSON.parse(body);
+        if (!wa_creds_b64) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Missing wa_creds_b64' }));
+          return;
+        }
+        const credsJson = Buffer.from(wa_creds_b64, 'base64').toString('utf8');
+        const creds = JSON.parse(credsJson);
+        if (!fs.existsSync(SESSION_DIR)) fs.mkdirSync(SESSION_DIR, { recursive: true });
+        fs.writeFileSync(path.join(SESSION_DIR, 'creds.json'), JSON.stringify(creds));
+        // 同時寫入雲端
+        await httpsPut(CLOUD_CREDS_URL, { type: 'wa-session-creds', creds });
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: true, message: 'Creds restored. Reconnecting...' }));
+        // 觸發重連
+        setTimeout(() => connectWhatsApp().catch(e => console.error('[WA] 重連失敗:', e.message)), 1000);
+      } catch(e) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: e.message }));
+      }
+    });
     return;
   }
 
