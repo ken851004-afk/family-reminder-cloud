@@ -892,6 +892,35 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  // === POST /api/send-message ===
+  if (req.method === 'POST' && pathname === '/api/send-message') {
+    let body = '';
+    req.on('data', c => body += c);
+    req.on('end', async () => {
+      try {
+        const { to, text } = JSON.parse(body);
+        if (!to || !text) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Missing "to" or "text"' }));
+          return;
+        }
+        if (!waConnected || !sock) {
+          res.writeHead(503, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'WhatsApp not connected' }));
+          return;
+        }
+        const jid = to.includes('@s.whatsapp.net') ? to : `${to}@s.whatsapp.net`;
+        await sock.sendMessage(jid, { text });
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: true, message: 'Sent' }));
+      } catch(e) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: e.message }));
+      }
+    });
+    return;
+  }
+
   // 404
   res.writeHead(404, { 'Content-Type': 'application/json' });
   res.end(JSON.stringify({ error: 'Not found', path: pathname }));
