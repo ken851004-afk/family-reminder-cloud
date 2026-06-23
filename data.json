@@ -213,10 +213,5 @@
     }
   ],
   "groupNotifications": [],
-  "pendingMessages": [
-    {
-      "phone": "85262218999",
-      "text": "✅ 測試 - WhatsApp 雲端連線正常！\n\n時間：2026-06-23 23:11 HKT\n\n呢條訊息由 GitHub Actions 自動發送，唔需要你部電腦開住。\n\n系統會自動 WhatsApp 提醒：\n• 提早 1 日（09:00）\n• 提早 3 小時\n\n🌐 https://49833288871e479db55ef9521bf04f60.app.codebuddy.work"
-    }
-  ]
+  "pendingMessages": []
 }
