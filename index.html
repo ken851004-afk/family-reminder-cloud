@@ -111,18 +111,28 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-
 
 <div class="tab-bar">
   <button class="tab-btn active" onclick="switchTab('reminders')">&#128203; 提醒</button>
+  <button class="tab-btn" onclick="switchTab('ken')">&#128188; KEN 工作</button>
   <button class="tab-btn" onclick="switchTab('birthdays')">&#127874; 生日</button>
 </div>
 
 <div class="container">
 
-  <div class="tab-content active" id="tab-reminders">
+  <div class="tab-content" id="tab-reminders">
     <div class="toolbar">
       <button onclick="exportData()">&#128226; 匯出備份</button>
       <button onclick="document.getElementById('import-file').click()">&#128229; 匯入</button>
       <input type="file" id="import-file" accept=".json" style="display:none" onchange="importData(event)">
     </div>
     <div id="reminder-list"><div class="loading">&#8987; 載入中...</div></div>
+  </div>
+
+  <div class="tab-content" id="tab-ken">
+    <div class="toolbar">
+      <button onclick="exportData()">&#128226; 匯出備份</button>
+      <button onclick="document.getElementById('import-file').click()">&#128229; 匯入</button>
+      <input type="file" id="import-file2" accept=".json" style="display:none" onchange="importData(event)">
+    </div>
+    <div id="ken-list"><div class="loading">&#8987; 載入中...</div></div>
   </div>
 
   <div class="tab-content" id="tab-birthdays">
@@ -366,36 +376,41 @@ function toast(msg){
 }
 
 // ===== Tab =====
+var currentTab = 'reminders';
 function switchTab(tab){
-  document.querySelectorAll('.tab-btn').forEach(function(b,i){
-    b.classList.toggle('active',(i===0&&tab==='reminders')||(i===1&&tab==='birthdays'));
-  });
+  currentTab = tab;
+  var btns = document.querySelectorAll('.tab-btn');
+  btns[0].classList.toggle('active', tab==='reminders');
+  btns[1].classList.toggle('active', tab==='ken');
+  btns[2].classList.toggle('active', tab==='birthdays');
   document.querySelectorAll('.tab-content').forEach(function(c){c.classList.remove('active');});
   document.getElementById('tab-'+tab).classList.add('active');
-  document.getElementById('fab-add').style.display=tab==='reminders'?'flex':'none';
+  document.getElementById('fab-add').style.display=(tab==='reminders'||tab==='ken')?'flex':'none';
   document.getElementById('fab-bday').style.display=tab==='birthdays'?'flex':'none';
+  if(tab==='reminders') renderReminders();
+  if(tab==='ken') renderKenReminders();
+  if(tab==='birthdays') renderBirthdays();
 }
 
 // ===== Render =====
-function renderAll(){ renderReminders(); renderBirthdays(); }
+function renderAll(){ renderReminders(); renderKenReminders(); renderBirthdays(); }
 
-function renderReminders(){
-  var c=document.getElementById('reminder-list');
-  if(!DATA.reminders||!DATA.reminders.length){
+function renderReminderList(items, containerId){
+  var c=document.getElementById(containerId);
+  if(!items||!items.length){
     c.innerHTML='<div class="empty"><div class="empty-icon">\u{1F4ED}</div><p>暫無提醒事項<br><small>按右下角 + 新增</small></p></div>';return;
   }
-  var sorted=DATA.reminders.slice().sort(function(a,b){
+  var sorted=items.slice().sort(function(a,b){
     var da=getDays(a.date);var db=getDays(b.date);
     if(da>=0&&db<0)return -1;if(da<0&&db>=0)return 1;
     return a.date.localeCompare(b.date);
   });
   var html='';
   CAT_ORDER.forEach(function(cat){
-
-    var items=sorted.filter(function(r){return r.category===cat;});
-    if(!items.length)return;
+    var catItems=sorted.filter(function(r){return r.category===cat;});
+    if(!catItems.length)return;
     html+='<div class="section-label">'+(CAT[cat]?CAT[cat].icon:'\u{1F4CC}')+' '+(CAT[cat]?CAT[cat].name:cat)+'</div>';
-    items.forEach(function(r){
+    catItems.forEach(function(r){
       var wd = ["日","一","二","三","四","五","六"][new Date(r.date+"T00:00:00").getDay()];
       var days=getDays(r.date);
       var urg=(days>=0&&days<=1)?((days===0)?'urgent':'soon'):'';
@@ -422,6 +437,18 @@ function renderReminders(){
     });
   });
   c.innerHTML=html;
+}
+
+function renderReminders(){
+  // Main tab: exclude KEN-only items
+  var items = (DATA.reminders||[]).filter(function(r){ return r.caregiver !== 'KEN'; });
+  renderReminderList(items, 'reminder-list');
+}
+
+function renderKenReminders(){
+  // KEN tab: only KEN items
+  var items = (DATA.reminders||[]).filter(function(r){ return r.caregiver === 'KEN'; });
+  renderReminderList(items, 'ken-list');
 }
 
 function renderBirthdays(){
@@ -502,7 +529,7 @@ function openAddModal(){
   document.getElementById('form-time-h').value='09';
   document.getElementById('form-time-m').value='00';
   document.getElementById('form-category').value='school';
-  document.getElementById('form-caregiver').value='';
+  document.getElementById('form-caregiver').value=currentTab==='ken'?'KEN':'';
   document.getElementById('form-note').value='';
   document.getElementById('form-address').value='';
   resetRepeatFields();
@@ -567,12 +594,12 @@ function saveReminder(){
       }
       Object.assign(DATA.reminders[idx],payload);
     }
-    saveLocal();renderReminders();closeModal('modal-reminder');
+    saveLocal();renderReminders();renderKenReminders();closeModal('modal-reminder');
     toast('\u2705 已更新「'+name+'」');
     syncToServer();
   } else {
     var item=Object.assign({id:uid(),notified:false,caregiverNotified1d:false,caregiverNotified3h:false},payload);
-    DATA.reminders.push(item);saveLocal();renderReminders();closeModal('modal-reminder');
+    DATA.reminders.push(item);saveLocal();renderReminders();renderKenReminders();closeModal('modal-reminder');
     toast('\u2705 已新增「'+name+'」');
     syncToServer();
   }
@@ -584,7 +611,7 @@ function confirmDeleteReminder(){
   var r=DATA.reminders.find(function(x){return x.id===_delId;});
   showConfirm('確定要刪除「'+(r?r.name:'')+'」嗎？',function(){
     DATA.reminders=DATA.reminders.filter(function(x){return x.id!==_delId;});
-    saveLocal();renderReminders();closeModal('modal-reminder');closeConfirm();
+    saveLocal();renderReminders();renderKenReminders();closeModal('modal-reminder');closeConfirm();
     toast('\u{1F5D1}\uFE0F 已刪除');
     syncToServer();
   });
@@ -592,7 +619,7 @@ function confirmDeleteReminder(){
 function quickDeleteReminder(id,name){
   showConfirm('確定要刪除「'+name+'」嗎？',function(){
     DATA.reminders=DATA.reminders.filter(function(x){return x.id!==id;});
-    saveLocal();renderReminders();closeConfirm();
+    saveLocal();renderReminders();renderKenReminders();closeConfirm();
     toast('\u{1F5D1}\uFE0F 已刪除');
     syncToServer();
   });
