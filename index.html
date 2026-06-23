@@ -238,11 +238,11 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-
 <script>
 // ===== CONFIG =====
 var CAT = {
-  school:{icon:'\u{1F3EB}',name:'學校面試',bdg:'bdg-school'},
-  class:{icon:'\u{1F3A8}',name:'興趣班',bdg:'bdg-class'},
-  special:{icon:'\u{2B50}',name:'特別日子',bdg:'bdg-special'},
-  summer:{icon:'\u{2600}\uFE0F',name:'暑期安排',bdg:'bdg-summer'},
-  routine:{icon:'\u{1F4C5}',name:'恆常日程',bdg:'bdg-routine'}
+  school:{icon:'🏫',name:'學校面試',bdg:'bdg-school'},
+  class:{icon:'🎨',name:'興趣班',bdg:'bdg-class'},
+  special:{icon:'⭐',name:'特別日子',bdg:'bdg-special'},
+  summer:{icon:'☀️',name:'暑期安排',bdg:'bdg-summer'},
+  routine:{icon:'📅',name:'恆常日程',bdg:'bdg-routine'}
 };
 var CAT_ORDER = ['school','summer','routine','class','special'];
 
@@ -334,7 +334,7 @@ function exportData() {
   a.href = URL.createObjectURL(blob);
   a.download = 'family-reminders-' + new Date().toISOString().slice(0,10) + '.json';
   a.click();
-  toast('\u{1F4E4} 已匯出備份檔案');
+  toast('📤 已匯出備份檔案');
 }
 
 function importData(e) {
@@ -343,10 +343,10 @@ function importData(e) {
   reader.onload = function(ev){
     try {
       var d = JSON.parse(ev.target.result);
-      if (!d.reminders) { toast('\u274C 格式不正確'); return; }
+      if (!d.reminders) { toast('❌ 格式不正確'); return; }
       DATA = d; saveLocal(); syncToServer(); renderAll();
-      toast('\u2705 已匯入 ' + (d.reminders||[]).length + ' 項提醒');
-    } catch(err) { toast('\u274C JSON 格式錯誤'); }
+      toast('✅ 已匯入 ' + (d.reminders||[]).length + ' 項提醒');
+    } catch(err) { toast('❌ JSON 格式錯誤'); }
   };
   reader.readAsText(file); e.target.value = '';
 }
@@ -398,7 +398,7 @@ function renderAll(){ renderReminders(); renderKenReminders(); renderBirthdays()
 function renderReminderList(items, containerId){
   var c=document.getElementById(containerId);
   if(!items||!items.length){
-    c.innerHTML='<div class="empty"><div class="empty-icon">\u{1F4ED}</div><p>暫無提醒事項<br><small>按右下角 + 新增</small></p></div>';return;
+    c.innerHTML='<div class="empty"><div class="empty-icon">📭</div><p>暫無提醒事項<br><small>按右下角 + 新增</small></p></div>';return;
   }
   var sorted=items.slice().sort(function(a,b){
     var da=getDays(a.date);var db=getDays(b.date);
@@ -409,7 +409,7 @@ function renderReminderList(items, containerId){
   CAT_ORDER.forEach(function(cat){
     var catItems=sorted.filter(function(r){return r.category===cat;});
     if(!catItems.length)return;
-    html+='<div class="section-label">'+(CAT[cat]?CAT[cat].icon:'\u{1F4CC}')+' '+(CAT[cat]?CAT[cat].name:cat)+'</div>';
+    html+='<div class="section-label">'+(CAT[cat]?CAT[cat].icon:'📌')+' '+(CAT[cat]?CAT[cat].name:cat)+'</div>';
     catItems.forEach(function(r){
       var wd = ["日","一","二","三","四","五","六"][new Date(r.date+"T00:00:00").getDay()];
       var days=getDays(r.date);
@@ -417,22 +417,22 @@ function renderReminderList(items, containerId){
       var rt=getRepeatText(r);
       html+='<div class="card '+urg+'">';
       html+='<div class="card-top">';
-      html+='<div class="card-icon">'+(CAT[r.category]?CAT[r.category].icon:'\u{1F4CC}')+'</div>';
+      html+='<div class="card-icon">'+(CAT[r.category]?CAT[r.category].icon:'📌')+'</div>';
       html+='<div class="card-body">';
       html+='<div class="card-name">'+esc(r.name)+'</div>';
       html+='<div class="card-meta">';
       if(CAT[r.category])html+='<span class="badge '+CAT[r.category].bdg+'">'+CAT[r.category].name+'</span>';
-      if(r.caregiver)html+='<span class="badge bdg-care">\u{1F464} '+esc(r.caregiver)+'</span>';
-      if(rt)html+='<span class="badge bdg-repeat">\u{1F501} '+rt+'</span>';
+      if(r.caregiver)html+='<span class="badge bdg-care">👤 '+esc(r.caregiver)+'</span>';
+      if(rt)html+='<span class="badge bdg-repeat">🔁 '+rt+'</span>';
       html+='</div>';
-      html+='<div class="card-date">\u{1F4C5} '+r.date+'（星期'+wd+'）'+(r.time&&r.time!=='00:00'?' \u23F0 '+r.time:'');
-      if(days>=0&&days<=7){html+=' \u00B7 '+(days===0?'\u{1F534} 今日':days===1?'\u{1F7E1} 聽日':'\u{1F7E2} '+days+'日後');}
+      html+='<div class="card-date">📅 '+r.date+'（星期'+wd+'）'+(r.time&&r.time!=='00:00'?' ⏰ '+r.time:'');
+      if(days>=0&&days<=7){html+=' · '+(days===0?'🔴 今日':days===1?'🟡 聽日':'🟢 '+days+'日後');}
       html+='</div>';
-      if(r.address)html+='<div class="card-note" style="margin-top:2px">\u{1F4CD} '+esc(r.address)+'</div>';
-      if(r.note)html+='<div class="card-note">\u{1F4DD} '+esc(r.note)+'</div>';
+      if(r.address)html+='<div class="card-note" style="margin-top:2px">📍 '+esc(r.address)+'</div>';
+      if(r.note)html+='<div class="card-note">📝 '+esc(r.note)+'</div>';
       html+='<div class="card-actions">';
-      html+='<button class="btn-xs btn-edit" onclick="openEditModal(\''+esc(r.id)+'\')">\u270F\uFE0F 編輯</button>';
-      html+='<button class="btn-xs btn-del" onclick="quickDeleteReminder(\''+esc(r.id)+'\',\''+esc(r.name)+'\')">\u{1F5D1}</button>';
+      html+='<button class="btn-xs btn-edit" onclick="openEditModal(\''+esc(r.id)+'\')">✏️ 編輯</button>';
+      html+='<button class="btn-xs btn-del" onclick="quickDeleteReminder(\''+esc(r.id)+'\',\''+esc(r.name)+'\')">🗑</button>';
       html+='</div></div></div></div>';
     });
   });
@@ -466,8 +466,8 @@ function renderBirthdays(){
   sorted.forEach(function(b){
     var isToday=b.date===today;
     html+='<div class="bday-card'+(isToday?' today':'')+'">';
-    html+='<button class="bday-edit" onclick="openBdayEdit(\''+esc(b.name)+'\')">\u270F\uFE0F</button>';
-    html+='<div class="bday-emoji">'+(isToday?'\u{1F389}':'\u{1F382}')+'</div>';
+    html+='<button class="bday-edit" onclick="openBdayEdit(\''+esc(b.name)+'\')">✏️</button>';
+    html+='<div class="bday-emoji">'+(isToday?'🎉':'🎂')+'</div>';
     html+='<div class="bday-name">'+esc(b.name)+'</div>';
     html+='<div class="bday-date">'+b.date+'</div>';
     if(b.note)html+='<div class="bday-note">'+esc(b.note)+'</div>';
@@ -522,7 +522,7 @@ function populateTimeSelects(){
   });
 }
 function openAddModal(){
-  document.getElementById('modal-title').innerHTML='\u2795 新增提醒';
+  document.getElementById('modal-title').innerHTML='➕ 新增提醒';
   document.getElementById('edit-id').value='';
   document.getElementById('form-name').value='';
   document.getElementById('form-date').value='';
@@ -540,7 +540,7 @@ function openAddModal(){
 function openEditModal(id){
   var r=DATA.reminders.find(function(x){return x.id===id;});
   if(!r)return;
-  document.getElementById('modal-title').innerHTML='\u270F\uFE0F 編輯提醒';
+  document.getElementById('modal-title').innerHTML='✏️ 編輯提醒';
   document.getElementById('edit-id').value=r.id;
   document.getElementById('form-name').value=r.name;
   document.getElementById('form-date').value=r.date;
@@ -595,12 +595,12 @@ function saveReminder(){
       Object.assign(DATA.reminders[idx],payload);
     }
     saveLocal();renderReminders();renderKenReminders();closeModal('modal-reminder');
-    toast('\u2705 已更新「'+name+'」');
+    toast('✅ 已更新「'+name+'」');
     syncToServer();
   } else {
     var item=Object.assign({id:uid(),notified:false,caregiverNotified1d:false,caregiverNotified3h:false},payload);
     DATA.reminders.push(item);saveLocal();renderReminders();renderKenReminders();closeModal('modal-reminder');
-    toast('\u2705 已新增「'+name+'」');
+    toast('✅ 已新增「'+name+'」');
     syncToServer();
   }
 }
@@ -612,7 +612,7 @@ function confirmDeleteReminder(){
   showConfirm('確定要刪除「'+(r?r.name:'')+'」嗎？',function(){
     DATA.reminders=DATA.reminders.filter(function(x){return x.id!==_delId;});
     saveLocal();renderReminders();renderKenReminders();closeModal('modal-reminder');closeConfirm();
-    toast('\u{1F5D1}\uFE0F 已刪除');
+    toast('🗑️ 已刪除');
     syncToServer();
   });
 }
@@ -620,7 +620,7 @@ function quickDeleteReminder(id,name){
   showConfirm('確定要刪除「'+name+'」嗎？',function(){
     DATA.reminders=DATA.reminders.filter(function(x){return x.id!==id;});
     saveLocal();renderReminders();renderKenReminders();closeConfirm();
-    toast('\u{1F5D1}\uFE0F 已刪除');
+    toast('🗑️ 已刪除');
     syncToServer();
   });
 }
@@ -661,7 +661,7 @@ function saveBirthday(){
   var ex=DATA.birthdays.findIndex(function(x){return x.name===name;});
   if(ex>=0)DATA.birthdays[ex]=item;else DATA.birthdays.push(item);
   saveLocal();renderBirthdays();closeModal('modal-birthday');
-  toast('\u2705 已儲存 '+name+' 的生日');
+  toast('✅ 已儲存 '+name+' 的生日');
   syncToServer();
 }
 function confirmDeleteBday(){
@@ -669,7 +669,7 @@ function confirmDeleteBday(){
   showConfirm('確定要刪除 '+name+' 的生日嗎？',function(){
     DATA.birthdays=DATA.birthdays.filter(function(x){return x.name!==name;});
     saveLocal();renderBirthdays();closeModal('modal-birthday');closeConfirm();
-    toast('\u{1F5D1}\uFE0F 已刪除 '+name+' 生日');
+    toast('🗑️ 已刪除 '+name+' 生日');
     syncToServer();
   });
 }
