@@ -135,7 +135,8 @@
       "note": "",
       "address": "",
       "repeat": "none",
-      "caregiverNotified3h": true
+      "caregiverNotified3h": true,
+      "caregiverNotified1d": false
     },
     {
       "id": "r1782129441286gp8",
@@ -147,7 +148,9 @@
       "caregiver": "KEN",
       "note": "",
       "address": "",
-      "repeat": "none"
+      "repeat": "none",
+      "caregiverNotified1d": false,
+      "caregiverNotified3h": false
     },
     {
       "id": "r17821294412864fk",
@@ -159,7 +162,9 @@
       "caregiver": "KEN",
       "note": "",
       "address": "",
-      "repeat": "none"
+      "repeat": "none",
+      "caregiverNotified1d": false,
+      "caregiverNotified3h": false
     },
     {
       "id": "r1782130775334pvg",
@@ -171,7 +176,9 @@
       "caregiver": "KEN",
       "note": "",
       "address": "",
-      "repeat": "none"
+      "repeat": "none",
+      "caregiverNotified1d": false,
+      "caregiverNotified3h": false
     },
     {
       "id": "r1782138144388naj",
@@ -184,7 +191,8 @@
       "note": "",
       "address": "",
       "repeat": "none",
-      "caregiverNotified3h": true
+      "caregiverNotified3h": true,
+      "caregiverNotified1d": false
     }
   ],
   "birthdays": [
@@ -203,5 +211,6 @@
       "date": "08-09",
       "note": ""
     }
-  ]
+  ],
+  "groupNotifications": []
 }
