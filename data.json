@@ -1,20 +1,6 @@
 {
   "reminders": [
     {
-      "id": "r1782033786303xqe",
-      "notified": false,
-      "name": "懇親會",
-      "date": "2026-07-02",
-      "time": "11:00",
-      "category": "special",
-      "caregiver": "EPPIE",
-      "note": "",
-      "repeat": "none",
-      "caregiverNotified1d": false,
-      "caregiverNotified3h": false,
-      "address": ""
-    },
-    {
       "id": "r17820338720444q5",
       "notified": false,
       "name": "Jarvis生日會",
