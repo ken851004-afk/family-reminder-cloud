@@ -188,6 +188,22 @@
       "caregiver": "KEN",
       "note": "",
       "repeat": "none"
+    },
+    {
+      "id": "r1782371362260sj2",
+      "notified": false,
+      "caregiverNotified1d": false,
+      "caregiverNotified3h": false,
+      "name": "面試班 郭老師",
+      "date": "2026-06-26",
+      "time": "10:30",
+      "category": "routine",
+      "caregiver": "COFFE",
+      "note": "",
+      "repeat": "weekly",
+      "repeatDays": [
+        5
+      ]
     }
   ],
   "birthdays": [
