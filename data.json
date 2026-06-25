@@ -1,20 +1,6 @@
 {
   "reminders": [
     {
-      "id": "r17820338720444q5",
-      "notified": false,
-      "name": "Jarvis生日會",
-      "date": "2026-08-30",
-      "time": "13:00",
-      "category": "special",
-      "caregiver": "EPPIE",
-      "note": "樂富冒險樂園",
-      "repeat": "none",
-      "caregiverNotified1d": false,
-      "caregiverNotified3h": false,
-      "address": ""
-    },
-    {
       "id": "r1782241289112b5h",
       "notified": false,
       "caregiverNotified1d": false,
