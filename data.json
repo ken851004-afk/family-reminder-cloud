@@ -164,13 +164,7 @@
       "repeat": "none"
     }
   ],
-  "birthdays": [
-    {
-      "name": "Eppie",
-      "date": "15-07",
-      "note": ""
-    }
-  ],
+  "birthdays": [],
   "pendingMessages": [],
   "members": [
     {
