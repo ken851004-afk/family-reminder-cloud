@@ -143,7 +143,13 @@
       "repeat": "none"
     }
   ],
-  "birthdays": [],
+  "birthdays": [
+    {
+      "name": "Eppie",
+      "date": "15-07",
+      "note": ""
+    }
+  ],
   "pendingMessages": [],
   "members": [
     {
