@@ -128,6 +128,19 @@
       "memberId": "ken",
       "note": "",
       "repeat": "none"
+    },
+    {
+      "id": "r17824936250902ob",
+      "notified": false,
+      "caregiverNotified1d": false,
+      "caregiverNotified3h": false,
+      "name": "烏溪沙⋯",
+      "date": "2026-06-29",
+      "time": "07:00",
+      "category": "work",
+      "caregiver": "KEN",
+      "note": "",
+      "repeat": "none"
     }
   ],
   "birthdays": [],
