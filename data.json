@@ -293,20 +293,5 @@
   "_room": "",
   "_version": 14,
   "history": [],
-  "groupNotifications": [
-    {
-      "id": "gn-1782533233279",
-      "reminderName": "優才",
-      "oldCaregiver": "EPPIE",
-      "newCaregiver": "KEN",
-      "changedAt": "2026-06-27T04:07:13.279Z"
-    },
-    {
-      "id": "gn-1782536383068",
-      "reminderName": "VICTOR",
-      "oldCaregiver": "EPPIE",
-      "newCaregiver": "KEN",
-      "changedAt": "2026-06-27T04:59:43.068Z"
-    }
-  ]
+  "groupNotifications": []
 }
