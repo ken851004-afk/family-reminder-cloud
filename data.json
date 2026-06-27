@@ -150,6 +150,22 @@
       "caregiver": "KEN",
       "note": "",
       "repeat": "none"
+    },
+    {
+      "id": "r1782533365556by6",
+      "notified": false,
+      "caregiverNotified1d": false,
+      "caregiverNotified3h": false,
+      "name": "Obi老師 跳舞",
+      "date": "2026-06-27",
+      "time": "13:30",
+      "category": "class",
+      "caregiver": "EPPIE",
+      "note": "",
+      "repeat": "weekly",
+      "repeatDays": [
+        6
+      ]
     }
   ],
   "birthdays": [
