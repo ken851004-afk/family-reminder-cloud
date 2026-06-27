@@ -182,6 +182,22 @@
       "repeatDays": [
         6
       ]
+    },
+    {
+      "id": "r1782536287397slr",
+      "notified": false,
+      "caregiverNotified1d": false,
+      "caregiverNotified3h": false,
+      "name": "iPad數學",
+      "date": "2026-06-24",
+      "time": "18:30",
+      "category": "school",
+      "caregiver": "ALL",
+      "note": "",
+      "repeat": "weekly",
+      "repeatDays": [
+        3
+      ]
     }
   ],
   "birthdays": [
