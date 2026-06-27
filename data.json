@@ -293,13 +293,5 @@
   "_room": "",
   "_version": 14,
   "history": [],
-  "groupNotifications": [
-    {
-      "id": "gn-1782548263260",
-      "reminderName": "優才",
-      "oldCaregiver": "KEN",
-      "newCaregiver": "Rosanna Mok",
-      "changedAt": "2026-06-27T08:17:43.260Z"
-    }
-  ]
+  "groupNotifications": []
 }
