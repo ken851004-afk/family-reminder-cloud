@@ -272,6 +272,7 @@ body::before { content:''; position:fixed; top:0; left:0; right:0; bottom:0; bac
   <button class="tab-btn" data-tab="birthdays">&#127874; 生日</button>
   <button class="tab-btn" data-tab="history">&#128451; 歷史<span class="tab-btn-badge" id="hist-badge" style="display:none">0</span></button>
   <button class="tab-btn" data-tab="whatsapp">&#128172; WhatsApp</button>
+  <button class="tab-btn" data-tab="install">&#128640; 安裝</button>
 </div>
 
 <div class="ptr-indicator" id="ptr-indicator"> pulling...</div>
@@ -335,6 +336,68 @@ body::before { content:''; position:fixed; top:0; left:0; right:0; bottom:0; bac
       </div>
       <button class="btn btn-primary" onclick="sendWhatsApp()" style="width:100%;margin-top:4px;">&#128640; 發送</button>
       <p id="wa-status-msg" style="font-size:11px;color:#999;margin-top:8px;text-align:center;display:none;"></p>
+    </div>
+  </div>
+
+  <!-- Install tab -->
+  <div class="tab-content" id="tab-install">
+    <div style="background:#fff;border-radius:13px;padding:16px;box-shadow:0 1px 3px rgba(0,0,0,0.06);margin-bottom:12px;">
+      <h3 style="font-size:15px;font-weight:700;margin-bottom:4px;">&#128241; 加到手機主畫面</h3>
+      <p style="font-size:11px;color:#999;margin-bottom:12px;">唔使安裝 App，一 click 即用</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:11px;">
+        <div style="background:#f9fafb;border-radius:10px;padding:12px;text-align:center;">
+          <div style="font-size:32px;margin-bottom:4px;">&#127822;</div>
+          <strong>iPhone / iPad</strong>
+          <ol style="text-align:left;padding-left:16px;margin:6px 0 0;line-height:1.6;color:#555;">
+            <li>Safari 打開呢頁</li>
+            <li>點底部 <span style="display:inline-block;border:1px solid #4f46e5;border-radius:4px;padding:0 6px;font-size:13px;color:#4f46e5;">&#x21E9;</span> 分享</li>
+            <li>選「加到主畫面」</li>
+          </ol>
+        </div>
+        <div style="background:#f9fafb;border-radius:10px;padding:12px;text-align:center;">
+          <div style="font-size:32px;margin-bottom:4px;">&#129302;</div>
+          <strong>Android</strong>
+          <ol style="text-align:left;padding-left:16px;margin:6px 0 0;line-height:1.6;color:#555;">
+            <li>Chrome 打開呢頁</li>
+            <li>點右上 &#8942; 選單</li>
+            <li>選「加到主畫面」</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+
+    <div style="background:#fff;border-radius:13px;padding:16px;box-shadow:0 1px 3px rgba(0,0,0,0.06);margin-bottom:12px;">
+      <h3 style="font-size:15px;font-weight:700;margin-bottom:4px;">&#128187; 開發者自架（一鍵安裝）</h3>
+      <p style="font-size:11px;color:#999;margin-bottom:8px;">想自己 host 一套？5 分鐘搞掂</p>
+      <p style="font-size:12px;color:#666;margin-bottom:10px;">
+        &#128073; 下載安裝腳本，雙擊執行即可自動完成以下步驟：<br>
+        &nbsp;&nbsp;&nbsp;1. 檢查環境 &nbsp; 2. Clone 倉庫 &nbsp; 3. 驗證 Token<br>
+        &nbsp;&nbsp;&nbsp;4. WhatsApp 憑證 &nbsp; 5. 建立 Repo &nbsp; 6. 部署 GitHub Pages
+      </p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn btn-primary" style="flex:1;min-width:130px;margin-top:0;font-size:13px;" onclick="copyInstallCmd('mac')">
+          &#127822; Mac 安裝指令
+        </button>
+        <button class="btn btn-outline" style="flex:1;min-width:130px;margin-top:0;font-size:13px;" onclick="copyInstallCmd('win')">
+          &#128421; Windows 安裝指令
+        </button>
+      </div>
+      <div id="install-cmd-box" style="display:none;margin-top:10px;background:#1e1e2e;color:#e5e7eb;border-radius:8px;padding:12px;font-family:monospace;font-size:12px;overflow-x:auto;white-space:pre-wrap;word-break:break-all;position:relative;">
+        <button onclick="copyToClipboard(document.getElementById('install-cmd-text').textContent)" style="position:absolute;top:6px;right:8px;background:#374151;color:#e5e7eb;border:none;border-radius:6px;padding:3px 8px;font-size:10px;cursor:pointer;">&#128203; 複製</button>
+        <code id="install-cmd-text" style="display:block;padding-top:6px;"></code>
+      </div>
+      <p style="font-size:10px;color:#999;margin-top:8px;">
+        需要：<a href="https://git-scm.com/downloads" target="_blank" style="color:#4f46e5;">Git</a>、<a href="https://nodejs.org/" target="_blank" style="color:#4f46e5;">Node.js 18+</a> 已安裝
+      </p>
+    </div>
+
+    <div style="background:#fff;border-radius:13px;padding:16px;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
+      <h3 style="font-size:15px;font-weight:700;margin-bottom:4px;">&#128279; 永久網址</h3>
+      <p style="font-size:12px;color:#666;margin-bottom:6px;">Bookmark 呢個 link，永遠唔會變：</p>
+      <div style="background:#f0fdf4;border:1.5px solid #86efac;border-radius:10px;padding:12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+        <code style="flex:1;min-width:0;word-break:break-all;font-size:12px;color:#166534;">https://ken851004-afk.github.io/family-reminder-cloud/</code>
+        <button class="btn btn-outline" style="width:auto;margin-top:0;padding:6px 12px;font-size:11px;" onclick="copyToClipboard('https://ken851004-afk.github.io/family-reminder-cloud/')">&#128203; 複製</button>
+      </div>
     </div>
   </div>
 
@@ -863,7 +926,7 @@ function sendReminderNow() {
 }
 
 // ===== Tabs =====
-var ALL_TABS = ['reminders','ken','eppie','coffe','kenny','rosanna','dad','birthdays','history','whatsapp'];
+var ALL_TABS = ['reminders','ken','eppie','coffe','kenny','rosanna','dad','birthdays','history','whatsapp','install'];
 
 function switchTab(tab) {
   CURRENT_TAB = tab;
@@ -1104,26 +1167,24 @@ function onCategoryChange() {
   if (cat === 'work') document.getElementById('form-caregiver').value = 'KEN';
 }
 function onMultiDateChange() {
-  var checked = document.getElementById('form-multi-date').checked;
-  var row = document.getElementById('multi-date-row');
-  row.style.display = checked ? 'flex' : 'none';
-  if (checked) {
+  var on = document.getElementById('form-multi-date').checked;
+  document.getElementById('multi-date-row').style.display = on ? 'flex' : 'none';
+  if (on) {
     var start = document.getElementById('form-date').value;
     if (start) document.getElementById('form-date-end').min = start;
     updateMultiDateCount();
+  } else {
+    document.getElementById('multi-date-count').textContent = '';
   }
 }
 function updateMultiDateCount() {
-  var start = document.getElementById('form-date').value;
-  var end = document.getElementById('form-date-end').value;
-  var el = document.getElementById('multi-date-count');
-  if (start && end && end >= start) {
-    var d1 = new Date(start), d2 = new Date(end);
-    var diff = Math.round((d2 - d1) / 86400000) + 1;
-    el.textContent = '共 ' + diff + ' 日';
-  } else {
-    el.textContent = '';
-  }
+  var s = document.getElementById('form-date').value;
+  var e = document.getElementById('form-date-end').value;
+  if (!s || !e) { document.getElementById('multi-date-count').textContent = ''; return; }
+  var d1 = new Date(s), d2 = new Date(e);
+  if (d2 < d1) { document.getElementById('multi-date-count').textContent = '⚠️ 結束日期須晚於開始日期'; return; }
+  var diff = Math.round((d2 - d1) / 86400000) + 1;
+  document.getElementById('multi-date-count').textContent = '共 ' + diff + ' 日';
 }
 function onCaregiverChange() {
   // Can add auto-category logic here if needed
@@ -1142,22 +1203,7 @@ function setSelectedDays(days) {
   });
 }
 
-function onMultiDateChange() {
-  var on = document.getElementById('form-multi-date').checked;
-  document.getElementById('multi-date-row').style.display = on ? 'flex' : 'none';
-  if (on) updateMultiDateCount();
-  else document.getElementById('multi-date-count').textContent = '';
-}
-function updateMultiDateCount() {
-  var s = document.getElementById('form-date').value;
-  var e = document.getElementById('form-date-end').value;
-  if (!s || !e) { document.getElementById('multi-date-count').textContent = ''; return; }
-  var d1 = new Date(s), d2 = new Date(e);
-  if (d2 < d1) { document.getElementById('multi-date-count').textContent = '⚠️ 結束日期須晚於開始日期'; return; }
-  var diff = Math.round((d2 - d1) / 86400000) + 1;
-  document.getElementById('multi-date-count').textContent = '共 ' + diff + ' 日';
-}
-// Listen for date changes to update count
+// Listen for date changes to update multi-date count
 document.addEventListener('DOMContentLoaded', function() {
   var d1 = document.getElementById('form-date'), d2 = document.getElementById('form-date-end');
   if (d1) d1.addEventListener('change', updateMultiDateCount);
@@ -1655,6 +1701,34 @@ function saveSettings() {
     }, 1500);
   }
 })();
+</script>
+
+<script>
+// ===== Install Tab Helpers =====
+function copyInstallCmd(os) {
+  var box = document.getElementById('install-cmd-box');
+  var text = document.getElementById('install-cmd-text');
+  var cmds = {
+    mac: 'bash -c "$(curl -fsSL https://raw.githubusercontent.com/ken851004-afk/family-reminder-cloud/master/install.sh)"',
+    win: 'powershell -c "irm https://raw.githubusercontent.com/ken851004-afk/family-reminder-cloud/master/install.bat | iex"'
+  };
+  text.textContent = cmds[os];
+  box.style.display = 'block';
+  copyToClipboard(cmds[os]);
+  showToast('\u{1F4CB} 安裝指令已複製！貼到 Terminal / PowerShell 執行');
+}
+
+function copyToClipboard(text) {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).catch(function(){});
+  } else {
+    var ta = document.createElement('textarea');
+    ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); } catch(e) {}
+    document.body.removeChild(ta);
+  }
+}
 </script>
 
 </body>
