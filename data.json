@@ -332,11 +332,5 @@
   "_room": "",
   "_version": 14,
   "history": [],
-  "groupNotifications": [],
-  "pendingMessages": [
-    {
-      "phone": "120363412134951607@g.us",
-      "text": "🏠 家庭提醒系統\n\n請 save 呢個網址：\nhttps://ken851004-afk.github.io/family-reminder-cloud/\n\n以後所有提醒、生日、事項都可以喺呢度睇到。新增/編輯/刪除都得。"
-    }
-  ]
+  "groupNotifications": []
 }
