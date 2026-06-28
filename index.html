@@ -1167,26 +1167,24 @@ function onCategoryChange() {
   if (cat === 'work') document.getElementById('form-caregiver').value = 'KEN';
 }
 function onMultiDateChange() {
-  var checked = document.getElementById('form-multi-date').checked;
-  var row = document.getElementById('multi-date-row');
-  row.style.display = checked ? 'flex' : 'none';
-  if (checked) {
+  var on = document.getElementById('form-multi-date').checked;
+  document.getElementById('multi-date-row').style.display = on ? 'flex' : 'none';
+  if (on) {
     var start = document.getElementById('form-date').value;
     if (start) document.getElementById('form-date-end').min = start;
     updateMultiDateCount();
+  } else {
+    document.getElementById('multi-date-count').textContent = '';
   }
 }
 function updateMultiDateCount() {
-  var start = document.getElementById('form-date').value;
-  var end = document.getElementById('form-date-end').value;
-  var el = document.getElementById('multi-date-count');
-  if (start && end && end >= start) {
-    var d1 = new Date(start), d2 = new Date(end);
-    var diff = Math.round((d2 - d1) / 86400000) + 1;
-    el.textContent = '共 ' + diff + ' 日';
-  } else {
-    el.textContent = '';
-  }
+  var s = document.getElementById('form-date').value;
+  var e = document.getElementById('form-date-end').value;
+  if (!s || !e) { document.getElementById('multi-date-count').textContent = ''; return; }
+  var d1 = new Date(s), d2 = new Date(e);
+  if (d2 < d1) { document.getElementById('multi-date-count').textContent = '⚠️ 結束日期須晚於開始日期'; return; }
+  var diff = Math.round((d2 - d1) / 86400000) + 1;
+  document.getElementById('multi-date-count').textContent = '共 ' + diff + ' 日';
 }
 function onCaregiverChange() {
   // Can add auto-category logic here if needed
@@ -1205,22 +1203,7 @@ function setSelectedDays(days) {
   });
 }
 
-function onMultiDateChange() {
-  var on = document.getElementById('form-multi-date').checked;
-  document.getElementById('multi-date-row').style.display = on ? 'flex' : 'none';
-  if (on) updateMultiDateCount();
-  else document.getElementById('multi-date-count').textContent = '';
-}
-function updateMultiDateCount() {
-  var s = document.getElementById('form-date').value;
-  var e = document.getElementById('form-date-end').value;
-  if (!s || !e) { document.getElementById('multi-date-count').textContent = ''; return; }
-  var d1 = new Date(s), d2 = new Date(e);
-  if (d2 < d1) { document.getElementById('multi-date-count').textContent = '⚠️ 結束日期須晚於開始日期'; return; }
-  var diff = Math.round((d2 - d1) / 86400000) + 1;
-  document.getElementById('multi-date-count').textContent = '共 ' + diff + ' 日';
-}
-// Listen for date changes to update count
+// Listen for date changes to update multi-date count
 document.addEventListener('DOMContentLoaded', function() {
   var d1 = document.getElementById('form-date'), d2 = document.getElementById('form-date-end');
   if (d1) d1.addEventListener('change', updateMultiDateCount);
