@@ -233,18 +233,24 @@ body::before { content:''; position:fixed; top:0; left:0; right:0; bottom:0; bac
 .cal-weekdays span { font-weight:600; }
 .cal-weekend { color:#ef4444 !important; }
 .cal-days { display:grid; grid-template-columns:repeat(7,1fr); gap:2px; }
-.cal-day { aspect-ratio:1; display:flex; align-items:center; justify-content:center; font-size:12px; border-radius:8px; cursor:pointer; position:relative; color:#374151; min-height:34px; }
+.cal-day { display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:12px; border-radius:8px; cursor:pointer; position:relative; color:#374151; min-height:44px; padding:2px 0; }
 .cal-day:hover { background:#f3f4f6; }
 .cal-day.today { background:#4f46e5; color:#fff; font-weight:700; }
 .cal-day.other-month { color:#d1d5db; }
 .cal-day.has-event::after { content:''; position:absolute; bottom:4px; width:5px; height:5px; border-radius:50%; background:#4f46e5; }
 .cal-day.hk-holiday::before { content:''; position:absolute; top:3px; right:3px; width:5px; height:5px; border-radius:50%; background:#ef4444; }
+.cal-holiday-name { display:block; font-size:8px; line-height:1.1; color:#ef4444; margin-top:1px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .cal-day.today.has-event::after { background:#fff; }
 .cal-day.today.hk-holiday::before { background:#fca5a5; }
 .cal-legend { display:flex; gap:12px; font-size:11px; color:#9ca3af; margin-top:10px; padding-top:8px; border-top:1px solid #f3f4f6; }
 .cal-dot { display:inline-block; width:7px; height:7px; border-radius:50%; margin-right:3px; vertical-align:middle; }
 .cal-dot-event { background:#4f46e5; }
 .cal-dot-hk { background:#ef4444; }
+.cal-holiday-list { margin-top:8px; padding-top:8px; border-top:1px solid #f3f4f6; }
+.cal-holiday-list-title { font-size:11px; font-weight:600; color:#6b7280; margin-bottom:4px; }
+.cal-holiday-item { display:flex; align-items:center; gap:6px; font-size:11px; padding:2px 0; color:#374151; }
+.cal-holiday-item .hk-dot { width:6px; height:6px; border-radius:50%; background:#ef4444; flex-shrink:0; }
+.cal-holiday-item.today-hk { background:#fef2f2; border-radius:4px; padding:2px 4px; }
 
 .date-sep { display:flex; align-items:center; gap:8px; margin:14px 0 6px; font-size:12px; font-weight:600; color:#4f46e5; }
 .date-sep::before, .date-sep::after { content:''; flex:1; height:1px; background:#e5e7eb; }
@@ -359,6 +365,7 @@ body::before { content:''; position:fixed; top:0; left:0; right:0; bottom:0; bac
           <span class="cal-dot cal-dot-event"></span> 事件
           <span class="cal-dot cal-dot-hk"></span> 香港節日
         </div>
+        <div id="cal-holiday-list" class="cal-holiday-list"></div>
       </div>
     </div>
   </div>
@@ -1050,7 +1057,8 @@ function renderCalendar() {
     if (eventDates[ds]) cls += ' has-event';
     if (HK_HOLIDAYS[ds]) cls += ' hk-holiday';
     var titleAttr = HK_HOLIDAYS[ds] ? ' title="'+HK_HOLIDAYS[ds]+'"' : '';
-    html += '<div class="'+cls+'"'+titleAttr+' onclick="calGoToDate(\''+ds+'\')">'+d+'</div>';
+    var holidayHtml = HK_HOLIDAYS[ds] ? '<span class="cal-holiday-name">'+HK_HOLIDAYS[ds]+'</span>' : '';
+    html += '<div class="'+cls+'"'+titleAttr+' onclick="calGoToDate(\''+ds+'\')">'+d+holidayHtml+'</div>';
   }
   // Next month head
   var total = startDay + daysInMonth;
@@ -1060,6 +1068,27 @@ function renderCalendar() {
     html += '<div class="'+cls+'">'+i+'</div>';
   }
   daysEl.innerHTML = html;
+  // Render holiday list for current month
+  var holidayListEl = document.getElementById('cal-holiday-list');
+  if (holidayListEl) {
+    var monthStr = calYear+'-'+String(calMonth+1).padStart(2,'0');
+    var holidays = [];
+    for (var ds in HK_HOLIDAYS) {
+      if (ds.substring(0, 7) === monthStr) holidays.push({ date: ds, name: HK_HOLIDAYS[ds] });
+    }
+    holidays.sort(function(a,b) { return a.date.localeCompare(b.date); });
+    if (holidays.length) {
+      var listHtml = '<div class="cal-holiday-list-title">🇭🇰 '+calYear+'年'+(calMonth+1)+'月香港公眾假期</div>';
+      holidays.forEach(function(h) {
+        var d = parseInt(h.date.substring(8,10));
+        var isToday = h.date === todayStr;
+        listHtml += '<div class="cal-holiday-item'+(isToday?' today-hk':'')+'"><span class="hk-dot"></span> '+d+'日 '+h.name+'</div>';
+      });
+      holidayListEl.innerHTML = listHtml;
+    } else {
+      holidayListEl.innerHTML = '';
+    }
+  }
 }
 function calPrevMonth() {
   calMonth--;
