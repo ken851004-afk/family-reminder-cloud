@@ -43,7 +43,10 @@ body::before { content:''; position:fixed; top:0; left:0; right:0; bottom:0; bac
 .tab-btn.active::after { display:none; }
 .tab-btn-badge { display:inline-block; background:#ef4444; color:#fff; font-size:9px; padding:0px 5px; border-radius:8px; margin-left:3px; vertical-align:top; min-width:16px; text-align:center; line-height:15px; }
 
-.container { max-width:600px; margin:0 auto; padding:10px 12px; }
+.container { max-width:1100px; margin:0 auto; padding:10px 12px; }
+@media screen and (max-width:600px) {
+  .container { max-width:100%; padding:10px 8px; }
+}
 
 .section-label { font-size:11px; font-weight:600; color:#999; padding:8px 2px 4px; text-transform:uppercase; letter-spacing:0.5px; display:flex; align-items:center; gap:4px; }
 
@@ -148,8 +151,15 @@ body::before { content:''; position:fixed; top:0; left:0; right:0; bottom:0; bac
 .time-colon { font-size:18px; font-weight:700; padding:0 2px; flex-shrink:0; }
 .time-wrap { display:flex; gap:2px; align-items:center; }
 .form-textarea { min-height:60px; resize:vertical; }
-.form-row { display:flex; gap:9px; }
-.form-row > * { flex:1; }
+.form-row { display:flex; gap:9px; align-items:flex-start; }
+.form-row > * { flex:1; min-width:0; }
+/* date input fix: allow shrink on Safari */
+.form-row input[type="date"] { min-width:0; width:100%; flex:1.2 1 0%; }
+@media screen and (max-width:380px) {
+  .form-row { flex-direction:column; gap:8px; }
+  .form-row > * { flex:none; }
+  .time-wrap { justify-content:center; }
+}
 .form-select { appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M6 8L1 3h10z' fill='%23999'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 12px center; padding-right:30px; }
 
 .btn { padding:11px 18px; border-radius:10px; border:none; font-size:15px; font-weight:600; cursor:pointer; transition:all 0.15s ease; width:100%; margin-top:8px; position:relative; overflow:hidden; }
@@ -211,23 +221,63 @@ body::before { content:''; position:fixed; top:0; left:0; right:0; bottom:0; bac
 .ptr-indicator { height:0; overflow:hidden; transition:height 0.2s ease; display:flex; align-items:center; justify-content:center; color:#999; font-size:12px; }
 .ptr-indicator.visible { height:40px; }
 
-/* iPhone Safari date input sticky positioning fix */
+/* ===== Calendar ===== */
+.reminders-layout { display:flex; gap:14px; align-items:flex-start; }
+.reminders-list-wrap { flex:1; min-width:0; }
+.calendar-panel { width:320px; flex-shrink:0; background:#fff; border-radius:14px; padding:14px; box-shadow:0 1px 4px rgba(0,0,0,0.06); position:sticky; top:60px; }
+.cal-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+.cal-title { font-size:15px; font-weight:700; color:#1f2937; }
+.cal-nav { background:none; border:none; font-size:18px; cursor:pointer; padding:4px 8px; border-radius:8px; color:#555; }
+.cal-nav:active { background:#f3f4f6; }
+.cal-weekdays { display:grid; grid-template-columns:repeat(7,1fr); text-align:center; font-size:11px; color:#9ca3af; padding:4px 0 6px; border-bottom:1px solid #f3f4f6; }
+.cal-weekdays span { font-weight:600; }
+.cal-weekend { color:#ef4444 !important; }
+.cal-days { display:grid; grid-template-columns:repeat(7,1fr); gap:2px; }
+.cal-day { aspect-ratio:1; display:flex; align-items:center; justify-content:center; font-size:12px; border-radius:8px; cursor:pointer; position:relative; color:#374151; min-height:34px; }
+.cal-day:hover { background:#f3f4f6; }
+.cal-day.today { background:#4f46e5; color:#fff; font-weight:700; }
+.cal-day.other-month { color:#d1d5db; }
+.cal-day.has-event::after { content:''; position:absolute; bottom:4px; width:5px; height:5px; border-radius:50%; background:#4f46e5; }
+.cal-day.hk-holiday::before { content:''; position:absolute; top:3px; right:3px; width:5px; height:5px; border-radius:50%; background:#ef4444; }
+.cal-day.today.has-event::after { background:#fff; }
+.cal-day.today.hk-holiday::before { background:#fca5a5; }
+.cal-legend { display:flex; gap:12px; font-size:11px; color:#9ca3af; margin-top:10px; padding-top:8px; border-top:1px solid #f3f4f6; }
+.cal-dot { display:inline-block; width:7px; height:7px; border-radius:50%; margin-right:3px; vertical-align:middle; }
+.cal-dot-event { background:#4f46e5; }
+.cal-dot-hk { background:#ef4444; }
+
+.date-sep { display:flex; align-items:center; gap:8px; margin:14px 0 6px; font-size:12px; font-weight:600; color:#4f46e5; }
+.date-sep::before, .date-sep::after { content:''; flex:1; height:1px; background:#e5e7eb; }
+.date-sep span { white-space:nowrap; }
+
+/* Responsive: stack on small screens */
+@media screen and (max-width:900px) {
+  .reminders-layout { flex-direction:column; }
+  .calendar-panel { width:100%; position:static; }
+}
 @media screen and (max-width:600px) {
-  .card-date { flex-direction:row; align-items:center; }
-  .card-date-text { flex:1; }
-  .form-row { gap:6px; }
-  .time-sel { font-size:14px; padding:10px 4px; }
+  .calendar-panel { padding:10px; }
+  .cal-day { font-size:11px; min-height:30px; }
+}
+/* iPhone fix for form rows */
+@media screen and (max-width:380px) {
+  .form-row { flex-direction:column; gap:8px; }
+  .form-row > * { flex:none; }
+  .time-wrap { justify-content:center; }
 }
 /* iPad */
 @media screen and (min-width:601px) and (max-width:1024px) {
   .form-row { gap:12px; }
   .time-sel { min-height:46px; font-size:16px; }
 }
-@media screen and (max-width:380px) {
-  .tab-btn { font-size:10px; padding:8px 6px; min-width:36px; }
-  .card-icon { font-size:20px; min-width:24px; }
-  .card-name { font-size:14px; }
-  .card { padding:12px; }
+/* Date input overlap fix for all screens */
+.form-row input[type="date"] { min-width:0; width:100%; flex:1.2 1 0%; }
+.form-row select { min-width:0; }
+
+/* iPhone Safari date input sticky positioning fix */
+@media screen and (max-width:600px) {
+  .card-date { flex-direction:row; align-items:center; }
+  .card-date-text { flex:1; }
 }
 
 /* Dark mode */
@@ -291,7 +341,26 @@ body::before { content:''; position:fixed; top:0; left:0; right:0; bottom:0; bac
       <button onclick="sendReminderNow()">&#128276; 即時提醒</button>
       <input type="file" id="import-file" accept=".json" style="display:none" onchange="importData(event)">
     </div>
-    <div id="reminder-list"></div>
+    <div class="reminders-layout">
+      <div class="reminders-list-wrap">
+        <div id="reminder-list"></div>
+      </div>
+      <div class="calendar-panel" id="calendar-panel">
+        <div class="cal-header">
+          <button class="cal-nav" onclick="calPrevMonth()">&#8249;</button>
+          <span class="cal-title" id="cal-title"></span>
+          <button class="cal-nav" onclick="calNextMonth()">&#8250;</button>
+        </div>
+        <div class="cal-weekdays">
+          <span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span class="cal-weekend">六</span><span class="cal-weekend">日</span>
+        </div>
+        <div class="cal-days" id="cal-days"></div>
+        <div class="cal-legend">
+          <span class="cal-dot cal-dot-event"></span> 事件
+          <span class="cal-dot cal-dot-hk"></span> 香港節日
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- 成員 tabs -->
@@ -549,6 +618,21 @@ var DATA = { reminders: [], birthdays: [], history: [] };
 var DATA_SHA = '';
 var API_ONLINE = false;
 var CURRENT_TAB = 'reminders';
+// ===== Hong Kong Holidays (2025-2026) =====
+var HK_HOLIDAYS = {
+  '2025-01-01':'元旦','2025-01-29':'農曆年初一','2025-01-30':'農曆年初二','2025-01-31':'農曆年初三',
+  '2025-04-04':'清明節','2025-04-18':'耶穌受難節','2025-04-19':'耶穌受難節翌日','2025-04-21':'復活節星期一',
+  '2025-05-01':'勞動節','2025-05-05':'佛誕節','2025-05-31':'端午節',
+  '2025-07-01':'香港回歸紀念日','2025-10-01':'國慶日','2025-10-06':'中秋節翌日',
+  '2025-10-29':'重陽節','2025-12-25':'聖誕節','2025-12-26':'聖誕節翌日',
+  '2026-01-01':'元旦','2026-02-17':'農曆年初一','2026-02-18':'農曆年初二','2026-02-19':'農曆年初三',
+  '2026-04-05':'清明節','2026-04-03':'耶穌受難節','2026-04-04':'耶穌受難節翌日','2026-04-06':'復活節星期一',
+  '2026-05-01':'勞動節','2026-05-24':'佛誕節','2026-06-19':'端午節',
+  '2026-07-01':'香港回歸紀念日','2026-10-01':'國慶日','2026-09-25':'中秋節翌日',
+  '2026-10-18':'重陽節','2026-12-25':'聖誕節','2026-12-26':'聖誕節翌日'
+};
+function isHkHoliday(dateStr) { return HK_HOLIDAYS[dateStr] || false; }
+function getHkHolidayName(dateStr) { return HK_HOLIDAYS[dateStr] || ''; }
 
 // ===== API Mode (JWT Auth) =====
 var API_BASE_URL = (function() {
@@ -925,6 +1009,78 @@ function sendReminderNow() {
   }).catch(function(){ toast('\u274C 發送失敗'); });
 }
 
+// ===== Calendar =====
+var calYear, calMonth;
+function initCalendar() {
+  var now = new Date();
+  calYear = now.getFullYear();
+  calMonth = now.getMonth(); // 0-indexed
+  renderCalendar();
+}
+function renderCalendar() {
+  var title = document.getElementById('cal-title');
+  if (title) title.textContent = calYear + '年 ' + (calMonth+1) + '月';
+  var daysEl = document.getElementById('cal-days');
+  if (!daysEl) return;
+  // First day of month (Mon=0)
+  var first = new Date(calYear, calMonth, 1);
+  var startDay = (first.getDay() + 6) % 7; // Mon=0
+  var daysInMonth = new Date(calYear, calMonth+1, 0).getDate();
+  var daysInPrev = new Date(calYear, calMonth, 0).getDate();
+  // Build event date set for quick lookup
+  var eventDates = {};
+  (DATA.reminders || []).forEach(function(r) {
+    if (r.date) eventDates[r.date] = true;
+    if (r.endDate) eventDates[r.endDate] = true;
+  });
+  var today = new Date();
+  var todayStr = today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0')+'-'+String(today.getDate()).padStart(2,'0');
+  var html = '';
+  // Previous month tail
+  for (var i = startDay-1; i >= 0; i--) {
+    var d = daysInPrev - i;
+    var cls = 'cal-day other-month';
+    html += '<div class="'+cls+'">'+d+'</div>';
+  }
+  // Current month
+  for (var d = 1; d <= daysInMonth; d++) {
+    var ds = calYear+'-'+String(calMonth+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+    var cls = 'cal-day';
+    if (ds === todayStr) cls += ' today';
+    if (eventDates[ds]) cls += ' has-event';
+    if (HK_HOLIDAYS[ds]) cls += ' hk-holiday';
+    var titleAttr = HK_HOLIDAYS[ds] ? ' title="'+HK_HOLIDAYS[ds]+'"' : '';
+    html += '<div class="'+cls+'"'+titleAttr+' onclick="calGoToDate(\''+ds+'\')">'+d+'</div>';
+  }
+  // Next month head
+  var total = startDay + daysInMonth;
+  var remain = (total % 7 === 0) ? 0 : 7 - (total % 7);
+  for (var i = 1; i <= remain; i++) {
+    var cls = 'cal-day other-month';
+    html += '<div class="'+cls+'">'+i+'</div>';
+  }
+  daysEl.innerHTML = html;
+}
+function calPrevMonth() {
+  calMonth--;
+  if (calMonth < 0) { calMonth = 11; calYear--; }
+  renderCalendar();
+}
+function calNextMonth() {
+  calMonth++;
+  if (calMonth > 11) { calMonth = 0; calYear++; }
+  renderCalendar();
+}
+function calGoToDate(dateStr) {
+  // Switch to relevant tab or scroll to date
+  var tab = 'reminders';
+  switchTab(tab);
+  setTimeout(function() {
+    var el = document.querySelector('[data-date="'+dateStr+'"]');
+    if (el) el.scrollIntoView({ behavior:'smooth', block:'center' });
+  }, 100);
+}
+
 // ===== Tabs =====
 var ALL_TABS = ['reminders','ken','eppie','coffe','kenny','rosanna','dad','birthdays','history','whatsapp','install'];
 
@@ -937,7 +1093,7 @@ function switchTab(tab) {
   // Update content visibility
   document.querySelectorAll('.tab-content').forEach(function(c) { c.classList.remove('active'); });
   var tc = document.getElementById('tab-' + tab);
-  if (tc) tc.classList.add('active');
+  if (tc) { tc.classList.add('active'); if (tab === 'reminders') renderCalendar(); }
   // Show/hide FABs
   var addableTabs = ['reminders','ken','eppie','coffe','kenny','rosanna','dad'];
   document.getElementById('fab-add').style.display = (addableTabs.indexOf(tab) >= 0) ? 'flex' : 'none';
@@ -969,6 +1125,7 @@ function renderAll() {
   CAREGIVERS.forEach(function(cg) { renderCaregiverTab(cg); });
   renderBirthdays();
   renderHistory();
+  renderCalendar();
 }
 
 // Main "全部" tab - non-work items
@@ -984,18 +1141,21 @@ function renderReminders() {
     return a.date.localeCompare(b.date);
   });
   var html = '';
-  CAT_ORDER.forEach(function(cat) {
-    var items = filtered.filter(function(r) { return r.category === cat; });
-    if (!items.length) return;
-    html += '<div class="section-label">' + (CAT[cat] ? CAT[cat].icon : '\u{1F4CC}') + ' ' + (CAT[cat] ? CAT[cat].name : cat) + '</div>';
-    items.forEach(function(r) { html += cardHTML(r); });
+  var lastDate = '';
+  filtered.forEach(function(r) {
+    if (r.date !== lastDate) {
+      var wd = formatWeekday(r.date);
+      var days = getDays(r.date);
+      var label = r.date + '（星期' + wd + '）';
+      if (days === 0) label += ' \u{1F534} 今日';
+      else if (days === 1) label += ' \u{1F7E1} 聽日';
+      else if (days > 1 && days <= 7) label += ' \u{1F7E2} ' + days + '日後';
+      else if (days < 0) label += ' \u{1F5D3} 已過期';
+      html += '<div class="date-sep"><span>' + label + '</span></div>';
+      lastDate = r.date;
+    }
+    html += cardHTML(r);
   });
-  // Uncategorized
-  var uncat = filtered.filter(function(r) { return !CAT[r.category] && r.category !== 'work'; });
-  if (uncat.length) {
-    html += '<div class="section-label">\u{1F4CC} 其他</div>';
-    uncat.forEach(function(r) { html += cardHTML(r); });
-  }
   c.innerHTML = html || '<div class="empty"><div class="empty-icon">\u{1F4ED}</div><div class="empty-text">暫無提醒事項</div><div class="empty-sub">按右下角 + 新增</div></div>';
   staggerCards(c);
 }
@@ -1037,7 +1197,7 @@ function cardHTML(r, showRestore) {
   var catInfo = CAT[r.category] || { icon: '\u{1F4CC}', name: r.category || '未分類', bdg: 'bdg-other' };
 
   var h = '';
-  h += '<div class="card ' + urg + '" data-cat="' + (r.category||'other') + '" data-id="' + esc(r.id) + '">';
+  h += '<div class="card ' + urg + '" data-cat="' + (r.category||'other') + '" data-id="' + esc(r.id) + '" data-date="' + esc(r.date) + '">';
   h += '<div class="card-top">';
   h += '<div class="card-icon">' + catInfo.icon + '</div>';
   h += '<div class="card-body">';
@@ -1354,7 +1514,7 @@ function saveReminder() {
       DATA.reminders.push(curPayload);
       addedNames.push(curName);
     }
-    saveLocal(); renderAll(); pushToGitHub(); updateHistoryBadge(); closeModal('modal-reminder');
+    saveLocal(); renderAll(); renderCalendar(); pushToGitHub(); updateHistoryBadge(); closeModal('modal-reminder');
     toast('✅ 已新增 ' + totalDays + ' 項提醒（' + name + '）');
     return;
   }
@@ -1607,6 +1767,7 @@ function init() {
   populateTimeSelects();
   initDarkMode();
   initPTR();
+  initCalendar();
   syncFromServer();
   checkWAStatus();
 }
