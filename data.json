@@ -3,126 +3,112 @@
     {
       "id": "r1782033588722kko",
       "notified": false,
-      "caregiverNotified1d": false,
-      "caregiverNotified3h": true,
       "name": "Joe Sir",
       "date": "2026-06-27",
       "time": "15:00",
       "category": "class",
-      "memberId": "eppie",
+      "caregiver": "EPPIE",
       "note": "",
       "repeat": "weekly",
       "repeatDays": [
         6
       ],
-      "caregiver": "EPPIE"
+      "caregiverNotified1d": false,
+      "caregiverNotified3h": false,
+      "address": ""
     },
     {
       "id": "r178203363735416b",
       "notified": false,
-      "caregiverNotified1d": false,
-      "caregiverNotified3h": false,
       "name": "軟網球班",
       "date": "2026-07-22",
       "time": "09:00",
       "category": "summer",
-      "memberId": "eppie",
+      "caregiver": "EPPIE",
       "note": "七，八月\n坪石青協",
       "repeat": "weekly",
       "repeatDays": [
         3
       ],
-      "caregiver": "EPPIE"
-    },
-    {
-      "id": "r1782033717733yq3",
-      "notified": false,
       "caregiverNotified1d": false,
       "caregiverNotified3h": false,
-      "name": "Ms Nita",
-      "date": "2026-06-29",
-      "time": "08:30",
-      "category": "class",
-      "memberId": "eppie",
-      "note": "最後4堂",
-      "repeat": "weekly",
-      "repeatDays": [
-        1
-      ],
-      "caregiver": "EPPIE"
-    },
-    {
-      "id": "r1782033786303xqe",
-      "notified": false,
-      "caregiverNotified1d": false,
-      "caregiverNotified3h": false,
-      "name": "懇親會",
-      "date": "2026-07-02",
-      "time": "11:00",
-      "category": "special",
-      "memberId": "eppie",
-      "note": "",
-      "repeat": "none",
-      "caregiver": "EPPIE"
-    },
-    {
-      "id": "r1782033821850vvd",
-      "notified": false,
-      "caregiverNotified1d": false,
-      "caregiverNotified3h": false,
-      "name": "嶺南小學",
-      "date": "2026-08-29",
-      "time": "12:00",
-      "category": "school",
-      "memberId": "eppie",
-      "note": "時間待定",
-      "repeat": "none",
-      "caregiver": "EPPIE"
-    },
-    {
-      "id": "r17820338720444q5",
-      "notified": false,
-      "caregiverNotified1d": false,
-      "caregiverNotified3h": false,
-      "name": "Jarvis生日會",
-      "date": "2026-08-30",
-      "time": "13:00",
-      "category": "special",
-      "memberId": "eppie",
-      "note": "樂富冒險樂園",
-      "repeat": "none",
-      "caregiver": "EPPIE"
-    },
-    {
-      "id": "r1782031274868tn8",
-      "notified": false,
-      "caregiverNotified1d": false,
-      "caregiverNotified3h": false,
-      "name": "優才",
-      "date": "2026-06-28",
-      "time": "16:45",
-      "category": "school",
-      "memberId": "ken",
-      "note": "調景嶺\n面試信",
-      "repeat": "none",
-      "caregiver": "Rosanna Mok"
+      "address": ""
     },
     {
       "id": "r1782033672781kcn",
       "notified": false,
-      "caregiverNotified1d": false,
-      "caregiverNotified3h": false,
       "name": "Oral",
       "date": "2026-07-16",
       "time": "12:00",
       "category": "summer",
-      "memberId": "ken",
+      "caregiver": "KEN",
       "note": "七，八月",
       "repeat": "weekly",
       "repeatDays": [
         4
       ],
-      "caregiver": "EPPIE"
+      "caregiverNotified1d": false,
+      "caregiverNotified3h": false,
+      "address": ""
+    },
+    {
+      "id": "r1782033717733yq3",
+      "notified": false,
+      "name": "Ms Nita",
+      "date": "2026-06-29",
+      "time": "08:30",
+      "category": "class",
+      "caregiver": "EPPIE",
+      "note": "最後4堂",
+      "repeat": "weekly",
+      "repeatDays": [
+        1
+      ],
+      "caregiverNotified1d": false,
+      "caregiverNotified3h": false,
+      "address": ""
+    },
+    {
+      "id": "r1782033786303xqe",
+      "notified": false,
+      "name": "懇親會",
+      "date": "2026-07-02",
+      "time": "11:00",
+      "category": "special",
+      "caregiver": "EPPIE",
+      "note": "",
+      "repeat": "none",
+      "caregiverNotified1d": false,
+      "caregiverNotified3h": false,
+      "address": ""
+    },
+    {
+      "id": "r1782033821850vvd",
+      "notified": false,
+      "name": "嶺南小學",
+      "date": "2026-08-29",
+      "time": "12:00",
+      "category": "school",
+      "caregiver": "EPPIE",
+      "note": "時間待定",
+      "repeat": "none",
+      "caregiverNotified1d": false,
+      "caregiverNotified3h": false,
+      "address": ""
+    },
+    {
+      "id": "r17820338720444q5",
+      "notified": false,
+      "name": "Jarvis生日會",
+      "date": "2026-08-30",
+      "time": "13:00",
+      "category": "special",
+      "caregiver": "EPPIE",
+      "note": "樂富冒險樂園",
+      "repeat": "none",
+      "caregiverNotified1d": false,
+      "caregiverNotified3h": false,
+      "address": ""
     },
     {
       "id": "r1782242069578xfj",
@@ -131,206 +117,55 @@
       "caregiverNotified3h": false,
       "name": "VICTOR",
       "date": "2026-07-03",
-      "time": "19:00",
-      "category": "work",
-      "memberId": "ken",
-      "note": "",
-      "repeat": "none",
-      "caregiver": "KEN"
-    },
-    {
-      "id": "r17824936250902ob",
-      "notified": false,
-      "caregiverNotified1d": false,
-      "caregiverNotified3h": false,
-      "name": "烏溪沙⋯",
-      "date": "2026-06-29",
-      "time": "07:00",
+      "time": "09:00",
       "category": "work",
       "caregiver": "KEN",
       "note": "",
       "repeat": "none"
     },
     {
-      "id": "r1782533365556by6",
+      "id": "r1782265746097k83",
       "notified": false,
       "caregiverNotified1d": false,
       "caregiverNotified3h": false,
-      "name": "Obi老師 跳舞",
-      "date": "2026-06-27",
-      "time": "13:30",
-      "category": "class",
-      "caregiver": "EPPIE",
-      "note": "",
-      "repeat": "weekly",
-      "repeatDays": [
-        6
-      ]
-    },
-    {
-      "id": "r17825362469190h9",
-      "notified": false,
-      "caregiverNotified1d": false,
-      "caregiverNotified3h": false,
-      "name": "iPad 數學",
-      "date": "2026-06-27",
-      "time": "10:00",
-      "category": "class",
-      "caregiver": "ALL",
-      "note": "",
-      "repeat": "weekly",
-      "repeatDays": [
-        6
-      ]
-    },
-    {
-      "id": "r1782536287397slr",
-      "notified": false,
-      "caregiverNotified1d": false,
-      "caregiverNotified3h": false,
-      "name": "iPad數學",
-      "date": "2026-07-01",
-      "time": "18:30",
-      "category": "school",
-      "caregiver": "ALL",
-      "note": "",
-      "repeat": "weekly",
-      "repeatDays": [
-        3
-      ]
-    },
-    {
-      "id": "r1782580962185vbc",
-      "notified": false,
-      "caregiverNotified1d": false,
-      "caregiverNotified3h": false,
-      "name": "LUX",
-      "date": "2026-06-28",
-      "time": "06:00",
-      "category": "work",
-      "caregiver": "KEN",
-      "note": "",
-      "repeat": "none"
-    },
-    {
-      "id": "r178258100875725i",
-      "notified": false,
-      "caregiverNotified1d": false,
-      "caregiverNotified3h": false,
-      "name": "lux",
+      "name": "科學館",
       "date": "2026-06-30",
-      "time": "09:00",
-      "category": "work",
-      "caregiver": "KEN",
-      "note": "時間未知",
+      "time": "14:30",
+      "category": "special",
+      "caregiver": "EPPIE",
+      "note": "同學仔",
       "repeat": "none"
     },
     {
-      "id": "r17825833211520y3",
+      "id": "r178229506385324z",
       "notified": false,
       "caregiverNotified1d": false,
       "caregiverNotified3h": false,
-      "name": "Leo",
-      "date": "2026-07-01",
+      "name": "烏溪沙😭😭😭",
+      "date": "2026-06-29",
       "time": "09:00",
       "category": "work",
       "caregiver": "KEN",
-      "note": "帶煙蛋",
-      "repeat": "daily"
+      "note": "",
+      "repeat": "none"
     }
   ],
   "birthdays": [
     {
+      "name": "KEN",
+      "date": "04-10",
+      "note": ""
+    },
+    {
       "name": "Eppie",
-      "date": "07-15",
+      "date": "15-07",
       "note": ""
     },
     {
-      "name": "Ken",
-      "date": "10-04",
-      "note": ""
-    },
-    {
-      "name": "Coffee",
-      "date": "02-21",
-      "note": ""
-    },
-    {
-      "name": "老豆",
-      "date": "06-16",
-      "note": ""
-    },
-    {
-      "name": "Kenny",
-      "date": "01-25",
-      "note": ""
-    },
-    {
-      "name": "Rosanna",
-      "date": "08-03",
+      "name": "JARVIS",
+      "date": "08-09",
       "note": ""
     }
   ],
-  "pendingMessages": [],
-  "members": [
-    {
-      "id": "ken",
-      "name": "KEN🐏",
-      "role": "adult",
-      "phone": "85262218999",
-      "color": "#4F46E5"
-    },
-    {
-      "id": "eppie",
-      "name": "EPPIE🐏",
-      "role": "child",
-      "phone": "85297510047",
-      "color": "#EC4899"
-    },
-    {
-      "id": "kenny-yam",
-      "name": "Kenny Yam",
-      "role": "adult",
-      "phone": "85291339336",
-      "color": "#10B981"
-    },
-    {
-      "id": "rosanna-mok",
-      "name": "Rosanna Mok",
-      "role": "adult",
-      "phone": "85293398522",
-      "color": "#F59E0B"
-    },
-    {
-      "id": "coffee",
-      "name": "COFFE",
-      "role": "adult",
-      "phone": "85266713322",
-      "color": "#8B5CF6"
-    },
-    {
-      "id": "lou-dau",
-      "name": "老豆",
-      "role": "adult",
-      "phone": "85262269100",
-      "color": "#EF4444"
-    }
-  ],
-  "settings": {
-    "dark_mode": false,
-    "pre_day": true,
-    "pre_3h": true,
-    "on_time": true,
-    "browser_push": true,
-    "wa_auto": true,
-    "email_user": "",
-    "email_service": "",
-    "email_template": "",
-    "email_to": ""
-  },
-  "sent_notifications": {},
-  "_room": "",
-  "_version": 14,
-  "history": [],
-  "groupNotifications": []
+  "pendingMessages": []
 }
