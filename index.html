@@ -919,6 +919,81 @@ function formatWeekday(dateStr) {
   return ['日','一','二','三','四','五','六'][localDate(dateStr).getDay()];
 }
 
+// Compute next occurrence date for recurring events
+// Returns { dateStr, days } — dateStr is the next occurrence, days is days from today
+function getNextOccurrence(r) {
+  if (!r.repeat || r.repeat === 'none') {
+    var days = getDays(r.date);
+    return { dateStr: r.date, days: days };
+  }
+  var today = new Date(); today.setHours(0,0,0,0);
+  var start = localDate(r.date);
+  var endDate = r.endDate ? localDate(r.endDate) : null;
+
+  // For daily
+  if (r.repeat === 'daily') {
+    var d = new Date(start);
+    if (d < today) d = new Date(today);
+    while (d < today || (endDate && d > endDate)) {
+      if (endDate && d > endDate) return null; // past end date
+      d.setDate(d.getDate() + 1);
+    }
+    var ds = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+    return { dateStr: ds, days: Math.round((d - today) / 86400000) };
+  }
+
+  // For weekly with repeatDays
+  if (r.repeat === 'weekly' && r.repeatDays && r.repeatDays.length) {
+    var d = new Date(start);
+    if (d < today) d = new Date(today);
+    var maxIter = 366;
+    while (maxIter-- > 0) {
+      if (endDate && d > endDate) return null;
+      if (d >= today && r.repeatDays.indexOf(d.getDay()) >= 0) {
+        var ds = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+        return { dateStr: ds, days: Math.round((d - today) / 86400000) };
+      }
+      d.setDate(d.getDate() + 1);
+    }
+    return null;
+  }
+
+  // For monthly with repeatDayOfMonth
+  if (r.repeat === 'monthly' && r.repeatDayOfMonth) {
+    var dom = parseInt(r.repeatDayOfMonth);
+    var y = today.getFullYear();
+    var m = today.getMonth();
+    var maxIter = 60;
+    while (maxIter-- > 0) {
+      var lastDay = new Date(y, m+1, 0).getDate();
+      var dd = Math.min(dom, lastDay);
+      var candidate = new Date(y, m, dd);
+      if (endDate && candidate > endDate) return null;
+      if (candidate >= today) {
+        var ds = candidate.getFullYear()+'-'+String(candidate.getMonth()+1).padStart(2,'0')+'-'+String(dd).padStart(2,'0');
+        return { dateStr: ds, days: Math.round((candidate - today) / 86400000) };
+      }
+      m++;
+      if (m > 11) { m = 0; y++; }
+    }
+    return null;
+  }
+
+  // Fallback
+  var days = getDays(r.date);
+  return { dateStr: r.date, days: days };
+}
+
+// Get effective display date for an item (next occurrence for recurring, stored date for single)
+function getEffectiveDate(r) {
+  var occ = getNextOccurrence(r);
+  return occ ? occ.dateStr : r.date;
+}
+function getEffectiveDays(r) {
+  var occ = getNextOccurrence(r);
+  return occ ? occ.days : getDays(r.date);
+}
+
 // ===== Helpers =====
 function uid() { return 'r' + Date.now() + Math.random().toString(36).slice(2,5); }
 function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
@@ -1120,8 +1195,8 @@ function autoArchiveExpired() {
     // Skip recurring events (they never expire)
     if (r.repeat && r.repeat !== 'none') { active.push(r); return; }
     var days = getDays(r.date);
-    // Expired: more than 7 days past (grace period)
-    if (days < -7) { expired.push(r); }
+    // Expired: immediately (grace period = 0)
+    if (days < 0) { expired.push(r); }
     else { active.push(r); }
   });
   if (expired.length > 0) {
@@ -1132,6 +1207,8 @@ function autoArchiveExpired() {
     });
     DATA.reminders = active;
     console.log('Auto-archived ' + expired.length + ' expired items');
+    saveLocal();
+    pushToGitHub();
   }
 }
 
@@ -1229,18 +1306,20 @@ function renderAll() {
 }
 
 // Main "全部" tab - non-work items, sorted by proximity to today (closest first)
+// Expired single events are auto-archived to history
 function renderReminders() {
   var c = document.getElementById('reminder-list');
+
+  // Auto-archive: move expired single events to history
+  autoArchiveExpired();
+
   if (!DATA.reminders || !DATA.reminders.length) {
     c.innerHTML = '<div class="empty"><div class="empty-icon">\u{1F4ED}</div><div class="empty-text">暫無提醒事項</div><div class="empty-sub">按右下角 + 新增</div></div>'; return;
   }
-  var today = new Date();
-  var todayStr = today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0')+'-'+String(today.getDate()).padStart(2,'0');
   var filtered = DATA.reminders.filter(function(r) { return r.category !== 'work'; });
-  // Sort by proximity to today: closest first
+  // Sort by effective date (next occurrence for recurring, stored date for single)
   filtered.sort(function(a,b) {
-    var da = getDays(a.date); var db = getDays(b.date);
-    // Priority: today=0 first, then positive (future), then negative (past)
+    var da = getEffectiveDays(a); var db = getEffectiveDays(b);
     var pa = (da >= 0) ? da : 99999 + Math.abs(da);
     var pb = (db >= 0) ? db : 99999 + Math.abs(db);
     return pa - pb;
@@ -1289,7 +1368,7 @@ function renderCaregiverTab(caregiver) {
     if (caregiver === 'KEN' && r.category === 'work') return true;
     return false;
   }).sort(function(a,b) {
-    var da = getDays(a.date); var db = getDays(b.date);
+    var da = getEffectiveDays(a); var db = getEffectiveDays(b);
     var pa = (da >= 0) ? da : 99999 + Math.abs(da);
     var pb = (db >= 0) ? db : 99999 + Math.abs(db);
     return pa - pb;
@@ -1307,17 +1386,32 @@ function renderCaregiverTab(caregiver) {
 
 // Card HTML builder
 function cardHTML(r, showRestore) {
-  var wd = formatWeekday(r.date);
-  var days = getDays(r.date);
   var isRecurring = (r.repeat && r.repeat !== 'none');
   var isMultiDay = r.name && /\(第\d+日\/\d+日\)$/.test(r.name);
-  var isExpired = (!isRecurring && days < 0);
-  var urg = '';
+  var nextOcc = null;
+  var effDate = r.date;
+  var effDays = getDays(r.date);
   if (isRecurring) {
+    nextOcc = getNextOccurrence(r);
+    if (nextOcc) {
+      effDate = nextOcc.dateStr;
+      effDays = nextOcc.days;
+    } else {
+      // Past end date — show as inactive
+      effDate = r.date;
+      effDays = -999;
+    }
+  }
+  var wd = formatWeekday(effDate);
+  var isExpired = (!isRecurring && effDays < 0);
+  var isInactiveRecurring = (isRecurring && nextOcc === null);
+  var urg = '';
+  if (isInactiveRecurring) {
+    urg = 'expired';
+  } else if (isRecurring) {
     urg = 'recurring';
-    if (days < -1) urg += ' expired';
   } else if (!isExpired) {
-    urg = (days >= 0 && days <= 1) ? ((days === 0) ? 'urgent' : 'soon') : '';
+    urg = (effDays >= 0 && effDays <= 1) ? ((effDays === 0) ? 'urgent' : 'soon') : '';
   } else {
     urg = 'expired';
   }
@@ -1325,7 +1419,7 @@ function cardHTML(r, showRestore) {
   var catInfo = CAT[r.category] || { icon: '\u{1F4CC}', name: r.category || '未分類', bdg: 'bdg-other' };
 
   var h = '';
-  h += '<div class="card ' + urg + '" data-cat="' + (r.category||'other') + '" data-id="' + esc(r.id) + '" data-date="' + r.date + '">';
+  h += '<div class="card ' + urg + '" data-cat="' + (r.category||'other') + '" data-id="' + esc(r.id) + '" data-date="' + effDate + '">';
   h += '<div class="card-top">';
   h += '<div class="card-icon">' + catInfo.icon + '</div>';
   h += '<div class="card-body">';
@@ -1339,21 +1433,29 @@ function cardHTML(r, showRestore) {
   // Date line
   h += '<div class="card-date">';
   h += '<span class="card-date-icon">\u{1F4C5}</span>';
-  h += '<span class="card-date-text">' + r.date + '（星期' + wd + '）';
+  h += '<span class="card-date-text">';
+  if (isInactiveRecurring) {
+    h += r.date + '（星期' + formatWeekday(r.date) + '）';
+    h += ' \u00B7 \u{274C} 已結束';
+  } else if (isRecurring && effDate !== r.date) {
+    h += r.date + ' 起 \u2192 <strong>下次 ' + effDate + '</strong>（星期' + wd + '）';
+  } else {
+    h += effDate + '（星期' + wd + '）';
+  }
   if (r.time && r.time !== '00:00') h += ' \u23F0 ' + r.time;
-  if (isRecurring) {
-    if (days < 0) {
-      h += ' <span class="date-badge bdg-upcoming">\u{1F504} 週期活動</span>';
-    } else if (days === 0) {
+  if (isInactiveRecurring) {
+    // no extra badge
+  } else if (isRecurring) {
+    if (effDays === 0) {
       h += ' \u00B7 \u{1F534} 今日';
-    } else if (days === 1) {
+    } else if (effDays === 1) {
       h += ' \u00B7 \u{1F7E1} 聽日';
-    } else {
-      h += ' \u00B7 \u{1F7E2} ' + days + '日後';
+    } else if (effDays > 1 && effDays <= 7) {
+      h += ' \u00B7 \u{1F7E2} ' + effDays + '日後';
     }
-  } else if (days >= 0 && days <= 7) {
-    h += ' \u00B7 ' + (days === 0 ? '\u{1F534} 今日' : days === 1 ? '\u{1F7E1} 聽日' : '\u{1F7E2} ' + days + '日後');
-  } else if (days < 0) {
+  } else if (effDays >= 0 && effDays <= 7) {
+    h += ' \u00B7 ' + (effDays === 0 ? '\u{1F534} 今日' : effDays === 1 ? '\u{1F7E1} 聽日' : '\u{1F7E2} ' + effDays + '日後');
+  } else if (effDays < 0) {
     h += ' \u00B7 \u{1F5D3} 已過期';
   }
   h += '</span></div>';
