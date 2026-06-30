@@ -107,6 +107,12 @@ body::before { content:''; position:fixed; top:0; left:0; right:0; bottom:0; bac
 .card-date { font-size:12px; color:#666; margin-top:4px; display:flex; align-items:flex-start; gap:3px; flex-wrap:wrap; }
 .card-date-icon { flex-shrink:0; margin-top:1px; }
 .card-date-text { flex:1; min-width:0; line-height:1.5; }
+.card.recurring { border-left: 4px solid #7c3aed; }
+.card.recurring::after { background: linear-gradient(90deg, #8b5cf6, #c4b5fd); }
+.card.recurring.expired { border-left-color: #6366f1; opacity: 0.85; }
+.card-date-text .date-badge { display:inline-block; font-size:10px; padding:1px 7px; border-radius:8px; margin-left:4px; font-weight:600; }
+.bdg-recurring { background:#ede9fe; color:#7c3aed; }
+.bdg-multiday { background:#fef3c7; color:#b45309; }
 .card-note { font-size:12px; color:#555; background:#f9fafb; padding:5px 9px; border-radius:8px; margin-top:5px; word-break:break-word; line-height:1.4; }
 .card-actions { display:flex; gap:6px; margin-top:9px; justify-content:flex-end; }
 .btn-xs { font-size:11px; padding:5px 12px; border-radius:12px; border:none; cursor:pointer; font-weight:500; transition:all 0.15s ease; min-height:30px; display:inline-flex; align-items:center; justify-content:center; }
@@ -975,30 +981,43 @@ function renderAll() {
   renderHistory();
 }
 
-// Main "全部" tab - non-work items
+// Main "全部" tab - non-work items, sorted by date
 function renderReminders() {
   var c = document.getElementById('reminder-list');
   if (!DATA.reminders || !DATA.reminders.length) {
     c.innerHTML = '<div class="empty"><div class="empty-icon">\u{1F4ED}</div><div class="empty-text">暫無提醒事項</div><div class="empty-sub">按右下角 + 新增</div></div>'; return;
   }
-  var filtered = DATA.reminders.filter(function(r) { return r.category !== 'work'; }).sort(function(a,b) {
-    var da = getDays(a.date); var db = getDays(b.date);
-    if (da >= 0 && db < 0) return -1;
-    if (da < 0 && db >= 0) return 1;
-    return a.date.localeCompare(b.date);
-  });
+  var filtered = DATA.reminders.filter(function(r) { return r.category !== 'work'; });
+  // Pure date sort
+  filtered.sort(function(a,b) { return a.date.localeCompare(b.date); });
+
   var html = '';
-  CAT_ORDER.forEach(function(cat) {
-    var items = filtered.filter(function(r) { return r.category === cat; });
-    if (!items.length) return;
-    html += '<div class="section-label">' + (CAT[cat] ? CAT[cat].icon : '\u{1F4CC}') + ' ' + (CAT[cat] ? CAT[cat].name : cat) + '</div>';
-    items.forEach(function(r) { html += cardHTML(r); });
-  });
-  // Uncategorized
-  var uncat = filtered.filter(function(r) { return !CAT[r.category] && r.category !== 'work'; });
-  if (uncat.length) {
-    html += '<div class="section-label">\u{1F4CC} 其他</div>';
-    uncat.forEach(function(r) { html += cardHTML(r); });
+  var i = 0;
+  while (i < filtered.length) {
+    var r = filtered[i];
+    // Detect multi-date group: name matches "xxx (第N日/Y日)"
+    var baseMatch = r.name && r.name.match(/^(.+?)\s*\(第\d+日\/\d+日\)$/);
+    if (baseMatch) {
+      var baseName = baseMatch[1];
+      var siblings = [r];
+      var j = i + 1;
+      while (j < filtered.length) {
+        var m = filtered[j].name && filtered[j].name.match(/^(.+?)\s*\(第\d+日\/\d+日\)$/);
+        if (m && m[1] === baseName) { siblings.push(filtered[j]); j++; }
+        else break;
+      }
+      if (siblings.length >= 2) {
+        siblings.sort(function(a,b){ return a.date.localeCompare(b.date); });
+        var sDate = siblings[0].date;
+        var eDate = siblings[siblings.length - 1].date;
+        html += '<div class="section-label">\u{1F4C5} ' + esc(baseName) + '（' + sDate + ' 至 ' + eDate + '，共 ' + siblings.length + ' 日）</div>';
+        siblings.forEach(function(sr){ html += cardHTML(sr); });
+        i = j;
+        continue;
+      }
+    }
+    html += cardHTML(r);
+    i++;
   }
   c.innerHTML = html || '<div class="empty"><div class="empty-icon">\u{1F4ED}</div><div class="empty-text">暫無提醒事項</div><div class="empty-sub">按右下角 + 新增</div></div>';
   staggerCards(c);
@@ -1030,9 +1049,14 @@ function renderCaregiverTab(caregiver) {
 function cardHTML(r, showRestore) {
   var wd = formatWeekday(r.date);
   var days = getDays(r.date);
-  var isExpired = (days < 0);
+  var isRecurring = (r.repeat && r.repeat !== 'none');
+  var isMultiDay = r.name && /\(第\d+日\/\d+日\)$/.test(r.name);
+  var isExpired = (!isRecurring && days < 0);
   var urg = '';
-  if (!isExpired) {
+  if (isRecurring) {
+    urg = 'recurring';
+    if (days < -1) urg += ' expired';
+  } else if (!isExpired) {
     urg = (days >= 0 && days <= 1) ? ((days === 0) ? 'urgent' : 'soon') : '';
   } else {
     urg = 'expired';
@@ -1049,14 +1073,25 @@ function cardHTML(r, showRestore) {
   h += '<div class="card-meta">';
   h += '<span class="badge ' + catInfo.bdg + '">' + catInfo.name + '</span>';
   if (r.caregiver) h += '<span class="badge bdg-care">\u{1F464} ' + esc(r.caregiver) + '</span>';
-  if (rt) h += '<span class="badge bdg-repeat">\u{1F501} ' + rt + '</span>';
+  if (isRecurring) h += '<span class="badge bdg-recurring">\u{1F501} ' + rt + '</span>';
+  if (isMultiDay) h += '<span class="badge bdg-multiday">\u{1F4C5} 多日</span>';
   h += '</div>';
-  // Date line - fixed layout for mobile
+  // Date line
   h += '<div class="card-date">';
   h += '<span class="card-date-icon">\u{1F4C5}</span>';
   h += '<span class="card-date-text">' + r.date + '（星期' + wd + '）';
   if (r.time && r.time !== '00:00') h += ' \u23F0 ' + r.time;
-  if (days >= 0 && days <= 7) {
+  if (isRecurring) {
+    if (days < 0) {
+      h += ' <span class="date-badge bdg-upcoming">\u{1F504} 週期活動</span>';
+    } else if (days === 0) {
+      h += ' \u00B7 \u{1F534} 今日';
+    } else if (days === 1) {
+      h += ' \u00B7 \u{1F7E1} 聽日';
+    } else {
+      h += ' \u00B7 \u{1F7E2} ' + days + '日後';
+    }
+  } else if (days >= 0 && days <= 7) {
     h += ' \u00B7 ' + (days === 0 ? '\u{1F534} 今日' : days === 1 ? '\u{1F7E1} 聽日' : '\u{1F7E2} ' + days + '日後');
   } else if (days < 0) {
     h += ' \u00B7 \u{1F5D3} 已過期';
