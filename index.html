@@ -236,6 +236,56 @@ body::before { content:''; position:fixed; top:0; left:0; right:0; bottom:0; bac
   .card { padding:12px; }
 }
 
+/* ===== Calendar ===== */
+.reminders-layout { display:flex; gap:12px; align-items:flex-start; }
+.reminders-list-wrap { flex:1; min-width:0; }
+.calendar-panel { width:280px; flex-shrink:0; background:#fff; border-radius:16px; padding:14px; box-shadow:0 1px 3px rgba(0,0,0,0.05), 0 4px 12px rgba(0,0,0,0.04); position:sticky; top:56px; }
+.cal-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+.cal-title { font-size:15px; font-weight:700; color:#1f2937; }
+.cal-nav { background:none; border:none; font-size:18px; cursor:pointer; padding:4px 8px; border-radius:8px; color:#555; }
+.cal-nav:active { background:#f3f4f6; }
+.cal-weekdays { display:grid; grid-template-columns:repeat(7,1fr); text-align:center; font-size:11px; color:#9ca3af; padding:4px 0 6px; border-bottom:1px solid #f3f4f6; }
+.cal-weekdays span { font-weight:600; }
+.cal-weekend { color:#ef4444 !important; }
+.cal-days { display:grid; grid-template-columns:repeat(7,1fr); gap:2px; }
+.cal-day { display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:12px; border-radius:8px; cursor:pointer; position:relative; color:#374151; min-height:44px; padding:2px 0; }
+.cal-day:hover { background:#f3f4f6; }
+.cal-day.today { background:#4f46e5; color:#fff; font-weight:700; }
+.cal-day.other-month { color:#d1d5db; }
+.cal-day.has-event::after { content:''; position:absolute; bottom:4px; width:5px; height:5px; border-radius:50%; background:#4f46e5; }
+.cal-day.hk-holiday::before { content:''; position:absolute; top:3px; right:3px; width:5px; height:5px; border-radius:50%; background:#ef4444; }
+.cal-holiday-name { display:block; font-size:8px; line-height:1.1; color:#ef4444; margin-top:1px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.cal-day.today.has-event::after { background:#fff; }
+.cal-day.today.hk-holiday::before { background:#fca5a5; }
+.cal-legend { display:flex; gap:12px; font-size:11px; color:#9ca3af; margin-top:10px; padding-top:8px; border-top:1px solid #f3f4f6; }
+.cal-dot { display:inline-block; width:7px; height:7px; border-radius:50%; margin-right:3px; vertical-align:middle; }
+.cal-dot-event { background:#4f46e5; }
+.cal-dot-hk { background:#ef4444; }
+.cal-holiday-list { margin-top:8px; padding-top:8px; border-top:1px solid #f3f4f6; }
+.cal-holiday-list-title { font-size:11px; font-weight:600; color:#6b7280; margin-bottom:4px; }
+.cal-holiday-item { display:flex; align-items:center; gap:6px; font-size:11px; padding:2px 0; color:#374151; }
+.cal-holiday-item .hk-dot { width:6px; height:6px; border-radius:50%; background:#ef4444; flex-shrink:0; }
+.cal-holiday-item.today-hk { background:#fef2f2; border-radius:4px; padding:2px 4px; }
+/* Settings page */
+.settings-card { background:#fff; border-radius:16px; padding:18px; box-shadow:0 1px 3px rgba(0,0,0,0.05), 0 4px 12px rgba(0,0,0,0.04); margin-bottom:12px; }
+.settings-card h3 { font-size:14px; font-weight:700; margin-bottom:10px; color:#1f2937; }
+.settings-card p { font-size:12px; color:#6b7280; margin-bottom:10px; line-height:1.6; }
+.btn-refresh { background:linear-gradient(135deg,#10b981,#059669); color:#fff; border:none; padding:10px 20px; border-radius:10px; font-size:14px; font-weight:600; cursor:pointer; display:inline-flex; align-items:center; gap:6px; transition:all 0.15s ease; }
+.btn-refresh:active { transform:scale(0.97); }
+.btn-refresh.loading { opacity:0.7; pointer-events:none; }
+.sync-status { font-size:11px; color:#6b7280; margin-top:8px; }
+.sync-status.success { color:#059669; }
+.sync-status.error { color:#dc2626; }
+/* Responsive: stack on small screens */
+@media screen and (max-width:900px) {
+  .reminders-layout { flex-direction:column; }
+  .calendar-panel { width:100%; position:static; }
+}
+@media screen and (max-width:600px) {
+  .calendar-panel { padding:10px; }
+  .cal-day { font-size:11px; min-height:30px; }
+}
+
 /* Dark mode */
 @media (prefers-color-scheme:dark) {
   body.dark-mode { background:#111827; color:#e5e7eb; }
@@ -279,6 +329,7 @@ body::before { content:''; position:fixed; top:0; left:0; right:0; bottom:0; bac
   <button class="tab-btn" data-tab="history">&#128451; 歷史<span class="tab-btn-badge" id="hist-badge" style="display:none">0</span></button>
   <button class="tab-btn" data-tab="whatsapp">&#128172; WhatsApp</button>
   <button class="tab-btn" data-tab="install">&#128640; 安裝</button>
+  <button class="tab-btn" data-tab="settings">&#9881; 設定</button>
 </div>
 
 <div class="ptr-indicator" id="ptr-indicator"> pulling...</div>
@@ -297,7 +348,27 @@ body::before { content:''; position:fixed; top:0; left:0; right:0; bottom:0; bac
       <button onclick="sendReminderNow()">&#128276; 即時提醒</button>
       <input type="file" id="import-file" accept=".json" style="display:none" onchange="importData(event)">
     </div>
-    <div id="reminder-list"></div>
+    <div class="reminders-layout">
+      <div class="reminders-list-wrap">
+        <div id="reminder-list"></div>
+      </div>
+      <div class="calendar-panel" id="calendar-panel">
+        <div class="cal-header">
+          <button class="cal-nav" onclick="calPrevMonth()">&#8249;</button>
+          <span class="cal-title" id="cal-title"></span>
+          <button class="cal-nav" onclick="calNextMonth()">&#8250;</button>
+        </div>
+        <div class="cal-weekdays">
+          <span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span class="cal-weekend">六</span><span class="cal-weekend">日</span>
+        </div>
+        <div class="cal-days" id="cal-days"></div>
+        <div class="cal-legend">
+          <span class="cal-dot cal-dot-event"></span> 事件
+          <span class="cal-dot cal-dot-hk"></span> 香港節日
+        </div>
+        <div id="cal-holiday-list" class="cal-holiday-list"></div>
+      </div>
+    </div>
   </div>
 
   <!-- 成員 tabs -->
@@ -404,6 +475,38 @@ body::before { content:''; position:fixed; top:0; left:0; right:0; bottom:0; bac
         <code style="flex:1;min-width:0;word-break:break-all;font-size:12px;color:#166534;">https://ken851004-afk.github.io/family-reminder-cloud/</code>
         <button class="btn btn-outline" style="width:auto;margin-top:0;padding:6px 12px;font-size:11px;" onclick="copyToClipboard('https://ken851004-afk.github.io/family-reminder-cloud/')">&#128203; 複製</button>
       </div>
+    </div>
+  </div>
+
+  <!-- 設定 tab -->
+  <div class="tab-content" id="tab-settings">
+    <div class="settings-card">
+      <h3>&#128260; 系統設定</h3>
+      <p>管理資料同步、系統狀態與重新整理</p>
+    </div>
+
+    <div class="settings-card">
+      <h3>&#128259; 資料同步</h3>
+      <p>強制從 GitHub 重新拉取最新資料，解決資料不同步問題</p>
+      <button class="btn-refresh" id="btn-sync-refresh" onclick="forceRefreshData()">&#128260; 重新整理資料</button>
+      <div class="sync-status" id="sync-status"></div>
+    </div>
+
+    <div class="settings-card">
+      <h3>&#128187; 系統資訊</h3>
+      <div style="font-size:12px;color:#6b7280;line-height:2;">
+        <div>提醒總數：<strong id="stat-reminders">0</strong></div>
+        <div>生日總數：<strong id="stat-birthdays">0</strong></div>
+        <div>歷史記錄：<strong id="stat-history">0</strong></div>
+        <div>連接狀態：<strong id="stat-connection">-</strong></div>
+        <div>最後更新：<strong id="stat-last-sync">-</strong></div>
+      </div>
+    </div>
+
+    <div class="settings-card">
+      <h3>&#128273; GitHub Token</h3>
+      <p>設定 GitHub Personal Access Token 以啟用雲端同步</p>
+      <button class="btn btn-outline" style="width:auto;margin-top:0;" onclick="openSettingsModal()">&#9881; 設定 Token</button>
     </div>
   </div>
 
@@ -556,6 +659,148 @@ var DATA_SHA = '';
 var DATA_LOADED = false;  // guard: prevent empty push before first load
 var API_ONLINE = false;
 var CURRENT_TAB = 'reminders';
+
+// ===== Hong Kong Holidays (2025-2026) =====
+var HK_HOLIDAYS = {
+  '2025-01-01':'元旦','2025-01-29':'農曆年初一','2025-01-30':'農曆年初二','2025-01-31':'農曆年初三',
+  '2025-04-04':'清明節','2025-04-18':'耶穌受難節','2025-04-19':'耶穌受難節翌日','2025-04-21':'復活節星期一',
+  '2025-05-01':'勞動節','2025-05-05':'佛誕節','2025-05-31':'端午節',
+  '2025-07-01':'香港回歸紀念日','2025-10-01':'國慶日','2025-10-06':'中秋節翌日',
+  '2025-10-29':'重陽節','2025-12-25':'聖誕節','2025-12-26':'聖誕節翌日',
+  '2026-01-01':'元旦','2026-02-17':'農曆年初一','2026-02-18':'農曆年初二','2026-02-19':'農曆年初三',
+  '2026-04-05':'清明節','2026-04-03':'耶穌受難節','2026-04-04':'耶穌受難節翌日','2026-04-06':'復活節星期一',
+  '2026-05-01':'勞動節','2026-05-24':'佛誕節','2026-06-19':'端午節',
+  '2026-07-01':'香港回歸紀念日','2026-10-01':'國慶日','2026-09-25':'中秋節翌日',
+  '2026-10-18':'重陽節','2026-12-25':'聖誕節','2026-12-26':'聖誕節翌日'
+};
+function isHkHoliday(dateStr) { return HK_HOLIDAYS[dateStr] || false; }
+function getHkHolidayName(dateStr) { return HK_HOLIDAYS[dateStr] || ''; }
+
+// ===== Calendar =====
+var calYear, calMonth;
+function initCalendar() {
+  var now = new Date();
+  calYear = now.getFullYear();
+  calMonth = now.getMonth();
+  renderCalendar();
+}
+function renderCalendar() {
+  var title = document.getElementById('cal-title');
+  if (title) title.textContent = calYear + '年 ' + (calMonth+1) + '月';
+  var daysEl = document.getElementById('cal-days');
+  if (!daysEl) return;
+  var first = new Date(calYear, calMonth, 1);
+  var startDay = (first.getDay() + 6) % 7;
+  var daysInMonth = new Date(calYear, calMonth+1, 0).getDate();
+  var daysInPrev = new Date(calYear, calMonth, 0).getDate();
+  var eventDates = {};
+  (DATA.reminders || []).forEach(function(r) {
+    if (r.date) eventDates[r.date] = true;
+    if (r.endDate) eventDates[r.endDate] = true;
+  });
+  (DATA.birthdays || []).forEach(function(b) {
+    var y = calYear;
+    var parts = b.date.split('-');
+    var bd = y + '-' + parts[1] + '-' + parts[2];
+    eventDates[bd] = true;
+  });
+  var today = new Date();
+  var todayStr = today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0')+'-'+String(today.getDate()).padStart(2,'0');
+  var html = '';
+  for (var i = startDay-1; i >= 0; i--) {
+    var d = daysInPrev - i;
+    html += '<div class="cal-day other-month">'+d+'</div>';
+  }
+  for (var d = 1; d <= daysInMonth; d++) {
+    var ds = calYear+'-'+String(calMonth+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+    var cls = 'cal-day';
+    if (ds === todayStr) cls += ' today';
+    if (eventDates[ds]) cls += ' has-event';
+    if (HK_HOLIDAYS[ds]) cls += ' hk-holiday';
+    var titleAttr = HK_HOLIDAYS[ds] ? ' title="'+HK_HOLIDAYS[ds]+'"' : '';
+    var holidayHtml = HK_HOLIDAYS[ds] ? '<span class="cal-holiday-name">'+HK_HOLIDAYS[ds]+'</span>' : '';
+    html += '<div class="'+cls+'"'+titleAttr+' onclick="calGoToDate(\''+ds+'\')">'+d+holidayHtml+'</div>';
+  }
+  var total = startDay + daysInMonth;
+  var remain = (total % 7 === 0) ? 0 : 7 - (total % 7);
+  for (var i = 1; i <= remain; i++) {
+    html += '<div class="cal-day other-month">'+i+'</div>';
+  }
+  daysEl.innerHTML = html;
+  var holidayListEl = document.getElementById('cal-holiday-list');
+  if (holidayListEl) {
+    var monthStr = calYear+'-'+String(calMonth+1).padStart(2,'0');
+    var holidays = [];
+    for (var ds in HK_HOLIDAYS) {
+      if (ds.substring(0, 7) === monthStr) holidays.push({ date: ds, name: HK_HOLIDAYS[ds] });
+    }
+    holidays.sort(function(a,b) { return a.date.localeCompare(b.date); });
+    if (holidays.length) {
+      var listHtml = '<div class="cal-holiday-list-title">\u{1F1ED}\u{1F1F0} '+calYear+'年'+(calMonth+1)+'月香港公眾假期</div>';
+      holidays.forEach(function(h) {
+        var d = parseInt(h.date.substring(8,10));
+        var isToday = h.date === todayStr;
+        listHtml += '<div class="cal-holiday-item'+(isToday?' today-hk':'')+'"><span class="hk-dot"></span> '+d+'日 '+h.name+'</div>';
+      });
+      holidayListEl.innerHTML = listHtml;
+    } else {
+      holidayListEl.innerHTML = '';
+    }
+  }
+}
+function calPrevMonth() {
+  calMonth--;
+  if (calMonth < 0) { calMonth = 11; calYear--; }
+  renderCalendar();
+}
+function calNextMonth() {
+  calMonth++;
+  if (calMonth > 11) { calMonth = 0; calYear++; }
+  renderCalendar();
+}
+function calGoToDate(dateStr) {
+  switchTab('reminders');
+  setTimeout(function() {
+    var el = document.querySelector('[data-date="'+dateStr+'"]');
+    if (el) el.scrollIntoView({ behavior:'smooth', block:'center' });
+  }, 150);
+}
+
+// ===== Settings: Force Refresh =====
+function forceRefreshData() {
+  var btn = document.getElementById('btn-sync-refresh');
+  var status = document.getElementById('sync-status');
+  btn.classList.add('loading');
+  btn.textContent = '\u{23F3} 重整中...';
+  status.textContent = '';
+  status.className = 'sync-status';
+  DATA_LOADED = false;
+  DATA = { reminders: [], birthdays: [], history: [] };
+  syncFromGitHub().then(function() {
+    btn.classList.remove('loading');
+    btn.textContent = '\u{1F260} 重新整理資料';
+    status.textContent = '\u{2705} 資料已重新整理 (' + new Date().toLocaleTimeString('zh-HK') + ')';
+    status.className = 'sync-status success';
+    updateSettingsStats();
+  }).catch(function(e) {
+    btn.classList.remove('loading');
+    btn.textContent = '\u{1F260} 重新整理資料';
+    status.textContent = '\u{274C} 重整失敗：' + (e.message || '網絡錯誤');
+    status.className = 'sync-status error';
+  });
+}
+function updateSettingsStats() {
+  var elR = document.getElementById('stat-reminders');
+  var elB = document.getElementById('stat-birthdays');
+  var elH = document.getElementById('stat-history');
+  var elC = document.getElementById('stat-connection');
+  var elS = document.getElementById('stat-last-sync');
+  if (elR) elR.textContent = (DATA.reminders || []).length;
+  if (elB) elB.textContent = (DATA.birthdays || []).length;
+  if (elH) elH.textContent = (DATA.history || []).length;
+  if (elC) elC.textContent = API_ONLINE ? '\u{1F7E2} 已連接' : '\u{1F534} 離線';
+  if (elS) elS.textContent = new Date().toLocaleString('zh-HK');
+}
 
 // ===== API Mode (JWT Auth) =====
 var API_BASE_URL = (function() {
@@ -979,17 +1224,27 @@ function renderAll() {
   CAREGIVERS.forEach(function(cg) { renderCaregiverTab(cg); });
   renderBirthdays();
   renderHistory();
+  initCalendar();
+  updateSettingsStats();
 }
 
-// Main "全部" tab - non-work items, sorted by date
+// Main "全部" tab - non-work items, sorted by proximity to today (closest first)
 function renderReminders() {
   var c = document.getElementById('reminder-list');
   if (!DATA.reminders || !DATA.reminders.length) {
     c.innerHTML = '<div class="empty"><div class="empty-icon">\u{1F4ED}</div><div class="empty-text">暫無提醒事項</div><div class="empty-sub">按右下角 + 新增</div></div>'; return;
   }
+  var today = new Date();
+  var todayStr = today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0')+'-'+String(today.getDate()).padStart(2,'0');
   var filtered = DATA.reminders.filter(function(r) { return r.category !== 'work'; });
-  // Pure date sort
-  filtered.sort(function(a,b) { return a.date.localeCompare(b.date); });
+  // Sort by proximity to today: closest first
+  filtered.sort(function(a,b) {
+    var da = getDays(a.date); var db = getDays(b.date);
+    // Priority: today=0 first, then positive (future), then negative (past)
+    var pa = (da >= 0) ? da : 99999 + Math.abs(da);
+    var pb = (db >= 0) ? db : 99999 + Math.abs(db);
+    return pa - pb;
+  });
 
   var html = '';
   var i = 0;
@@ -1033,7 +1288,12 @@ function renderCaregiverTab(caregiver) {
     // KEN special: also show work items
     if (caregiver === 'KEN' && r.category === 'work') return true;
     return false;
-  }).sort(function(a,b) { return a.date.localeCompare(b.date); });
+  }).sort(function(a,b) {
+    var da = getDays(a.date); var db = getDays(b.date);
+    var pa = (da >= 0) ? da : 99999 + Math.abs(da);
+    var pb = (db >= 0) ? db : 99999 + Math.abs(db);
+    return pa - pb;
+  });
 
   if (!items.length) {
     c.innerHTML = '<div class="empty"><div class="empty-icon">' + CAREGIVER_EMOJI[caregiver] + '</div><div class="empty-text">暫無 ' + caregiver + ' 的事項</div><div class="empty-sub">新增提醒時選取 ' + caregiver + ' 為照顧者</div></div>';
@@ -1065,7 +1325,7 @@ function cardHTML(r, showRestore) {
   var catInfo = CAT[r.category] || { icon: '\u{1F4CC}', name: r.category || '未分類', bdg: 'bdg-other' };
 
   var h = '';
-  h += '<div class="card ' + urg + '" data-cat="' + (r.category||'other') + '" data-id="' + esc(r.id) + '">';
+  h += '<div class="card ' + urg + '" data-cat="' + (r.category||'other') + '" data-id="' + esc(r.id) + '" data-date="' + r.date + '">';
   h += '<div class="card-top">';
   h += '<div class="card-icon">' + catInfo.icon + '</div>';
   h += '<div class="card-body">';
