@@ -346,6 +346,7 @@ body::before { content:''; position:fixed; top:0; left:0; right:0; bottom:0; bac
       <button onclick="exportData()">&#128226; 匯出</button>
       <button onclick="document.getElementById('import-file').click()">&#128229; 匯入</button>
       <button onclick="sendReminderNow()">&#128276; 即時提醒</button>
+      <button onclick="manualArchive()" title="手動將已過期事項歸檔">&#128451; 歸檔過期</button>
       <input type="file" id="import-file" accept=".json" style="display:none" onchange="importData(event)">
     </div>
     <div class="reminders-layout">
@@ -413,6 +414,14 @@ body::before { content:''; position:fixed; top:0; left:0; right:0; bottom:0; bac
       </div>
       <button class="btn btn-primary" onclick="sendWhatsApp()" style="width:100%;margin-top:4px;">&#128640; 發送</button>
       <p id="wa-status-msg" style="font-size:11px;color:#999;margin-top:8px;text-align:center;display:none;"></p>
+    </div>
+    <div style="background:#fff;border-radius:13px;padding:16px;box-shadow:0 1px 3px rgba(0,0,0,0.06);margin-top:12px;">
+      <h3 style="font-size:15px;font-weight:700;margin-bottom:12px;">&#128197; 今日摘要</h3>
+      <p style="font-size:11px;color:#999;margin-bottom:12px;">一鍵生成今日 + 聽日提醒摘要，發送到 WhatsApp</p>
+      <div id="wa-summary-preview" style="background:#f9fafb;border-radius:10px;padding:12px;font-size:12px;color:#555;line-height:1.8;min-height:60px;white-space:pre-wrap;margin-bottom:10px;"></div>
+      <button class="btn btn-outline" onclick="generateDailySummary()" style="width:100%;margin-top:0;">&#128269; 生成摘要</button>
+      <button class="btn btn-primary" id="btn-send-summary" onclick="sendSummary()" style="width:100%;margin-top:4px;display:none;">&#128172; 發送摘要到 WhatsApp</button>
+      <p id="wa-summary-status" style="font-size:11px;color:#999;margin-top:8px;text-align:center;display:none;"></p>
     </div>
   </div>
 
@@ -761,7 +770,7 @@ function calNextMonth() {
 function calGoToDate(dateStr) {
   switchTab('reminders');
   setTimeout(function() {
-    var el = document.querySelector('[data-date="'+dateStr+'"]');
+    var el = document.querySelector('[data-orig-date="'+dateStr+'"]') || document.querySelector('[data-date="'+dateStr+'"]');
     if (el) el.scrollIntoView({ behavior:'smooth', block:'center' });
   }, 150);
 }
@@ -932,12 +941,9 @@ function getNextOccurrence(r) {
 
   // For daily
   if (r.repeat === 'daily') {
-    var d = new Date(start);
-    if (d < today) d = new Date(today);
-    while (d < today || (endDate && d > endDate)) {
-      if (endDate && d > endDate) return null; // past end date
-      d.setDate(d.getDate() + 1);
-    }
+    if (endDate && today > endDate) return null; // past end date
+    var d = (start > today) ? new Date(start) : new Date(today);
+    if (endDate && d > endDate) return null;
     var ds = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
     return { dateStr: ds, days: Math.round((d - today) / 86400000) };
   }
@@ -961,8 +967,10 @@ function getNextOccurrence(r) {
   // For monthly with repeatDayOfMonth
   if (r.repeat === 'monthly' && r.repeatDayOfMonth) {
     var dom = parseInt(r.repeatDayOfMonth);
-    var y = today.getFullYear();
-    var m = today.getMonth();
+    // Start from r.date or today, whichever is later
+    var baseDate = start > today ? start : today;
+    var y = baseDate.getFullYear();
+    var m = baseDate.getMonth();
     var maxIter = 60;
     while (maxIter-- > 0) {
       var lastDay = new Date(y, m+1, 0).getDate();
@@ -1201,6 +1209,7 @@ function autoArchiveExpired() {
   });
   if (expired.length > 0) {
     if (!DATA.history) DATA.history = [];
+    DATA._lastArchived = expired.map(function(r) { return r.id; });
     expired.forEach(function(r) {
       r.archivedAt = new Date().toISOString();
       DATA.history.push(r);
@@ -1209,7 +1218,56 @@ function autoArchiveExpired() {
     console.log('Auto-archived ' + expired.length + ' expired items');
     saveLocal();
     pushToGitHub();
+    var names = expired.map(function(r){ return r.name; }).join('、');
+    showUndoToast('\u{1F4E6} 已歸檔 ' + expired.length + ' 項：' + names, function() { undoArchive(); });
   }
+}
+
+function undoArchive() {
+  if (!DATA._lastArchived || !DATA._lastArchived.length) { toast('\u274C 沒有可還原的項目'); return; }
+  var ids = DATA._lastArchived;
+  var restored = [];
+  var newHistory = [];
+  (DATA.history || []).forEach(function(r) {
+    if (ids.indexOf(r.id) >= 0) {
+      delete r.archivedAt;
+      DATA.reminders.push(r);
+      restored.push(r);
+    } else {
+      newHistory.push(r);
+    }
+  });
+  DATA.history = newHistory;
+  DATA._lastArchived = [];
+  saveLocal();
+  pushToGitHub();
+  toast('\u{1F519} 已還原 ' + restored.length + ' 項');
+  renderAll();
+  updateHistoryBadge();
+}
+
+function showUndoToast(msg, undoFn) {
+  var t = document.getElementById('toast');
+  t.innerHTML = msg + ' <button onclick="event.stopPropagation();(' + undoFn.toString() + ')();document.getElementById(\'toast\').classList.remove(\'show\');" style="background:#4f46e5;color:#fff;border:none;border-radius:6px;padding:3px 10px;font-size:12px;cursor:pointer;margin-left:8px;">↩ 還原</button>';
+  t.classList.add('show');
+  t.style.pointerEvents = 'auto';
+  clearTimeout(t._t);
+  t._t = setTimeout(function(){ t.classList.remove('show'); t.style.pointerEvents = 'none'; t.innerHTML = ''; }, 6000);
+}
+
+// Manual archive: user-triggered, same logic as auto but with confirmation
+function manualArchive() {
+  if (!DATA.reminders) return;
+  var expired = [];
+  var today = new Date(); today.setHours(0,0,0,0);
+  DATA.reminders.forEach(function(r) {
+    if (r.repeat && r.repeat !== 'none') return;
+    if (getDays(r.date) < 0) expired.push(r);
+  });
+  if (!expired.length) { toast('\u2705 沒有過期事項需要歸檔'); return; }
+  var names = expired.map(function(r){ return r.name; }).join('、');
+  if (!confirm('確定要將以下 ' + expired.length + ' 項歸檔到歷史？\n\n' + names + '\n\n歸檔後可在「歷史」tab 還原')) return;
+  autoArchiveExpired();
 }
 
 function updateHistoryBadge() {
@@ -1274,6 +1332,8 @@ function switchTab(tab) {
   var addableTabs = ['reminders','ken','eppie','coffe','kenny','rosanna','dad'];
   document.getElementById('fab-add').style.display = (addableTabs.indexOf(tab) >= 0) ? 'flex' : 'none';
   document.getElementById('fab-bday').style.display = (tab === 'birthdays') ? 'flex' : 'none';
+  // Update settings stats when switching to settings tab
+  if (tab === 'settings') updateSettingsStats();
   // Scroll active tab into view
   var activeBtn = document.querySelector('.tab-btn.active');
   if (activeBtn) activeBtn.scrollIntoView({ behavior:'smooth', block:'nearest', inline:'center' });
@@ -1419,7 +1479,7 @@ function cardHTML(r, showRestore) {
   var catInfo = CAT[r.category] || { icon: '\u{1F4CC}', name: r.category || '未分類', bdg: 'bdg-other' };
 
   var h = '';
-  h += '<div class="card ' + urg + '" data-cat="' + (r.category||'other') + '" data-id="' + esc(r.id) + '" data-date="' + effDate + '">';
+  h += '<div class="card ' + urg + '" data-cat="' + (r.category||'other') + '" data-id="' + esc(r.id) + '" data-date="' + effDate + '" data-orig-date="' + r.date + '">';
   h += '<div class="card-top">';
   h += '<div class="card-icon">' + catInfo.icon + '</div>';
   h += '<div class="card-body">';
@@ -1955,6 +2015,69 @@ async function sendWhatsApp() {
     st.style.color = '#ef4444';
     console.error('sendWhatsApp error:', e);
   }
+}
+
+// ===== Daily Summary Generator =====
+var _dailySummaryText = '';
+function generateDailySummary() {
+  var today = new Date(); today.setHours(0,0,0,0);
+  var todayStr = today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0')+'-'+String(today.getDate()).padStart(2,'0');
+  var tmrw = new Date(today); tmrw.setDate(tmrw.getDate()+1);
+  var tmrwStr = tmrw.getFullYear()+'-'+String(tmrw.getMonth()+1).padStart(2,'0')+'-'+String(tmrw.getDate()).padStart(2,'0');
+  
+  var lines = [];
+  lines.push('\u{1F4C5} ' + todayStr + '（星期' + formatWeekday(todayStr) + '）');
+  lines.push('');
+  
+  var todayItems = (DATA.reminders || []).filter(function(r) {
+    if (r.repeat && r.repeat !== 'none') {
+      var occ = getNextOccurrence(r);
+      return occ && occ.dateStr === todayStr;
+    }
+    return r.date === todayStr;
+  });
+  var tmrwItems = (DATA.reminders || []).filter(function(r) {
+    if (r.repeat && r.repeat !== 'none') {
+      var occ = getNextOccurrence(r);
+      return occ && occ.dateStr === tmrwStr;
+    }
+    return r.date === tmrwStr;
+  });
+
+  if (todayItems.length) {
+    lines.push('\u{1F534} 今日提醒：');
+    todayItems.forEach(function(r) {
+      var t = r.time && r.time !== '00:00' ? ' \u23F0' + r.time : '';
+      lines.push('  \u2022 ' + r.name + t + (r.caregiver ? ' [' + r.caregiver + ']' : ''));
+    });
+  } else {
+    lines.push('\u{1F7E2} 今日無提醒');
+  }
+  lines.push('');
+  if (tmrwItems.length) {
+    lines.push('\u{1F7E1} 聽日提醒（' + tmrwStr + '）：');
+    tmrwItems.forEach(function(r) {
+      var t = r.time && r.time !== '00:00' ? ' \u23F0' + r.time : '';
+      lines.push('  \u2022 ' + r.name + t + (r.caregiver ? ' [' + r.caregiver + ']' : ''));
+    });
+  } else {
+    lines.push('\u{1F7E2} 聽日暫無提醒');
+  }
+
+  _dailySummaryText = lines.join('\n');
+  var preview = document.getElementById('wa-summary-preview');
+  preview.textContent = _dailySummaryText;
+  document.getElementById('btn-send-summary').style.display = 'block';
+}
+
+function sendSummary() {
+  if (!_dailySummaryText) { generateDailySummary(); }
+  var phone = document.getElementById('wa-recipient').value;
+  var text = _dailySummaryText;
+  if (!text) return;
+  document.getElementById('wa-message').value = text;
+  sendWhatsApp();
+  document.getElementById('btn-send-summary').style.display = 'none';
 }
 
 // ===== Pull to Refresh =====
