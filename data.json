@@ -172,6 +172,22 @@
       "repeatDays": [
         5
       ]
+    },
+    {
+      "id": "r1783164945626mwk",
+      "notified": false,
+      "caregiverNotified1d": false,
+      "caregiverNotified3h": false,
+      "name": "中文班",
+      "date": "2026-07-15",
+      "time": "09:30",
+      "category": "class",
+      "caregiver": "EPPIE",
+      "note": "",
+      "repeat": "weekly",
+      "repeatDays": [
+        3
+      ]
     }
   ],
   "birthdays": [
