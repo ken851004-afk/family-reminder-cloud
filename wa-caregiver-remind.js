@@ -174,6 +174,17 @@ async function main() {
   
   console.log(`[TIME] HKT: ${hkDateStr} ${String(hkHour).padStart(2,'0')}:${String(hkNow.getUTCMinutes()).padStart(2,'0')}`);
 
+  // 0. Circuit breaker: check if we've failed recently
+  const waFailCount = data.waFailureCount || 0;
+  const waLastFail = data.waLastFailure || 0;
+  const hoursSinceLastFail = waLastFail ? (Date.now() - waLastFail) / 3600000 : 999;
+  if (waFailCount >= 3 && hoursSinceLastFail < 24) {
+    console.log(`[CIRCUIT] Skipping — ${waFailCount} recent failures, last ${Math.round(hoursSinceLastFail)}h ago.`);
+    console.log('  (Will retry after 24h from last failure)');
+    console.log('  To fix NOW: run setup-wa-creds.js locally and update WA_CREDS_B64 secret.');
+    process.exit(0);
+  }
+
   // 1. Fetch data.json from GitHub
   console.log('[DATA] Fetching data.json from GitHub...');
   let ghResult;
@@ -470,6 +481,17 @@ async function main() {
             console.error('[DATA] Failed to save:', e.message);
           }
         }
+        // Reset failure count on successful connection
+        if ((data.waFailureCount || 0) > 0) {
+          data.waFailureCount = 0;
+          data.waLastFailure = 0;
+          try {
+            await githubApiPut('data.json', data, sha, 'Reset WA failure count (success)');
+            console.log('[CIRCUIT] Reset failure count (connection successful)');
+          } catch(e) {
+            console.error('[CIRCUIT] Failed to reset failure count:', e.message);
+          }
+        }
         clearTimeout(timeout);
         setTimeout(() => { sock.end(); resolve(); }, 2000);
       }
@@ -518,6 +540,15 @@ async function main() {
         // Only error if we had notifications but failed to send any
         if (sent === 0 && toNotify.length > 0) {
           clearTimeout(timeout);
+          // Update failure count for circuit breaker
+          data.waFailureCount = (data.waFailureCount || 0) + 1;
+          data.waLastFailure = Date.now();
+          console.log(`[CIRCUIT] Failure count: ${data.waFailureCount}/3`);
+          try {
+            await githubApiPut('data.json', data, sha, 'Update WA failure count');
+          } catch(e) {
+            console.error('[CIRCUIT] Failed to save failure count:', e.message);
+          }
           reject(new Error(`WhatsApp connection failed (status ${statusCode || 'unknown'}). ` +
             `WA_CREDS_B64 may be expired - see logs above for fix instructions.`));
         } else {
