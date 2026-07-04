@@ -291,12 +291,50 @@ async function main() {
 
   console.log(`[CRON] ${toNotify.length} caregiver + ${groupNotifs.length} group + ${pendingCount} pending notifications to send`);
 
-  // 3. Decode WhatsApp creds
+  // 3. Decode WhatsApp creds (pre-validate)
   if (!process.env.WA_CREDS_B64) {
-    console.error('WA_CREDS_B64 not set');
+    console.error('');
+    console.error('='.repeat(60));
+    console.error('[WA] ❌ WA_CREDS_B64 environment variable is NOT SET!');
+    console.error('='.repeat(60));
+    console.error('');
+    console.error('This means the GitHub Secret WA_CREDS_B64 is missing.');
+    console.error('');
+    console.error('How to fix:');
+    console.error('  1. Go to: https://github.com/ken851004-afk/family-reminder-cloud/settings/secrets/actions');
+    console.error('  2. Add/re-update secret: WA_CREDS_B64');
+    console.error('  3. Value = run setup-wa-creds.js locally and copy the output');
+    console.error('');
+    console.error('='.repeat(60));
     process.exit(1);
   }
-  const credsJson = Buffer.from(process.env.WA_CREDS_B64, 'base64').toString('utf8');
+  
+  // Validate that WA_CREDS_B64 is valid base64 and valid JSON
+  let credsJson;
+  try {
+    credsJson = Buffer.from(process.env.WA_CREDS_B64, 'base64').toString('utf8');
+    JSON.parse(credsJson); // validate it's valid JSON
+    console.log('[WA] WA_CREDS_B64: valid base64 + valid JSON ✓');
+  } catch(e) {
+    console.error('');
+    console.error('='.repeat(60));
+    console.error('[WA] ❌ WA_CREDS_B64 is INVALID!');
+    console.error('='.repeat(60));
+    console.error('');
+    console.error('Error:', e.message);
+    console.error('');
+    console.error('This means WA_CREDS_B64 is corrupted or not valid base64 JSON.');
+    console.error('');
+    console.error('How to fix:');
+    console.error('  1. Run locally: node setup-wa-creds.js');
+    console.error('  2. Scan the QR code with WhatsApp');
+    console.error('  3. After connection, copy the output base64 string');
+    console.error('  4. Update GitHub Secret: WA_CREDS_B64');
+    console.error('');
+    console.error('='.repeat(60));
+    process.exit(1);
+  }
+  
   const SESSION_DIR = '/tmp/wa-session-caregiver';
   if (!fs.existsSync(SESSION_DIR)) fs.mkdirSync(SESSION_DIR, { recursive: true });
   fs.writeFileSync(path.join(SESSION_DIR, 'creds.json'), credsJson);
@@ -439,12 +477,49 @@ async function main() {
       if (connection === 'close') {
         const statusCode = lastDisconnect?.error?.output?.statusCode;
         const errorMsg = lastDisconnect?.error?.message || 'unknown';
-        console.error(`[WA] Connection closed! Code: ${statusCode}, Error: ${errorMsg}`);
-        console.error('[WA] lastDisconnect:', JSON.stringify(lastDisconnect, null, 2));
+        const errJson = JSON.stringify(lastDisconnect, null, 2);
+        
+        // Check if this looks like an auth/credentials error
+        const isAuthError = (
+          statusCode === 401 || statusCode === 403 ||
+          errorMsg.includes('auth') || errorMsg.includes('credential') ||
+          errorMsg.includes('session') || errorMsg.includes('expired') ||
+          errJson.includes('Unauthorized') || errJson.includes('Forbidden')
+        );
+        
+        console.error('');
+        console.error('='.repeat(60));
+        if (isAuthError || statusCode) {
+          console.error('[WA] ❌ WhatsApp connection FAILED (likely expired credentials)');
+          console.error('='.repeat(60));
+          console.error('');
+          console.error('Status code:', statusCode);
+          console.error('Error:', errorMsg);
+          console.error('');
+          console.error('This usually means WA_CREDS_B64 is EXPIRED or INVALID.');
+          console.error('');
+          console.error('How to fix:');
+          console.error('  1. On your local PC, run:');
+          console.error('       cd /path/to/family-reminder-cloud');
+          console.error('       node setup-wa-creds.js');
+          console.error('  2. Scan the QR code with WhatsApp');
+          console.error('  3. After "✅ Credentials saved!", copy the base64 string');
+          console.error('  4. Go to GitHub repo → Settings → Secrets → Actions');
+          console.error('  5. Update WA_CREDS_B64 with the new value');
+          console.error('  6. Re-run this workflow');
+          console.error('');
+          console.error('='.repeat(60));
+          console.error('');
+        } else {
+          console.error('[WA] Connection closed! Code:', statusCode, 'Error:', errorMsg);
+          console.error('[WA] lastDisconnect:', errJson);
+        }
+        
         // Only error if we had notifications but failed to send any
         if (sent === 0 && toNotify.length > 0) {
           clearTimeout(timeout);
-          reject(new Error(`Connection closed before sending: ${statusCode} - ${errorMsg}`));
+          reject(new Error(`WhatsApp connection failed (status ${statusCode || 'unknown'}). ` +
+            `WA_CREDS_B64 may be expired - see logs above for fix instructions.`));
         } else {
           clearTimeout(timeout);
           resolve();
