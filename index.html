@@ -30,6 +30,8 @@ body::before { content:''; position:fixed; top:0; left:0; right:0; bottom:0; bac
 .conn-status { display:inline-flex; align-items:center; gap:3px; font-size:10px; padding:2px 8px; border-radius:10px; margin-top:4px; font-weight:500; }
 .conn-ok { background:rgba(52,211,153,0.3); color:#6ee7b7; }
 .conn-err { background:rgba(248,113,113,0.3); color:#fca5a5; }
+.conn-sync { background:rgba(96,165,250,0.3); color:#93c5fd; animation:pulse-sync 1s infinite; }
+@keyframes pulse-sync { 0%,100%{opacity:1} 50%{opacity:0.5} }
 .wa-status { display:inline-flex; align-items:center; gap:3px; font-size:10px; padding:2px 8px; border-radius:10px; margin-left:4px; font-weight:500; }
 .wa-ok { background:rgba(52,211,153,0.3); color:#6ee7b7; }
 .wa-off { background:rgba(251,191,36,0.3); color:#fcd34d; }
@@ -1150,24 +1152,48 @@ function pushToAPI() {
 
 function pushToGitHub() {
   var token = getGHToken();
-  if (!DATA_LOADED) { console.log('Data not loaded yet, skip push'); return; }
-  if (!token || !DATA_SHA) { console.log('No token or SHA, skip push'); return; }
+  if (!DATA_LOADED) { console.log('Data not loaded yet, skip push'); return Promise.resolve(false); }
+  if (!token || !DATA_SHA) { console.log('No token or SHA, skip push'); return Promise.resolve(false); }
   var jsonStr = JSON.stringify(DATA, null, 2);
   var bytes = new TextEncoder().encode(jsonStr);
   var binary = '';
   bytes.forEach(function(b) { binary += String.fromCharCode(b); });
   var b64 = btoa(binary);
-  fetch('https://api.github.com/repos/ken851004-afk/family-reminder-cloud/contents/data.json', {
+  setConnStatus(false);
+  var connEl = document.getElementById('conn-badge');
+  if (connEl) { connEl.innerHTML = '\u{1F504} 同步中...'; connEl.className = 'conn-status conn-sync'; }
+  return fetch('https://api.github.com/repos/ken851004-afk/family-reminder-cloud/contents/data.json', {
     method: 'PUT',
     headers: { 'Authorization': 'Bearer ' + token, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
     body: JSON.stringify({ message: 'Update data.json via web UI', content: b64, sha: DATA_SHA, branch: 'master' })
   }).then(function(r) {
     if (r.ok) return r.json();
+    if (r.status === 409) {
+      // SHA conflict — re-sync and retry once
+      console.log('[GH] SHA conflict, re-syncing...');
+      return syncFromGitHub().then(function() {
+        return pushToGitHub();
+      });
+    }
+    if (r.status === 403) {
+      toast('\u26A0\uFE0F 寫入失敗：Token 權限不足或已過期');
+      setConnStatus(false);
+      throw new Error('HTTP 403 — Token read-only or expired');
+    }
     throw new Error('HTTP ' + r.status);
   }).then(function(j) {
-    DATA_SHA = j.content.sha;
-    console.log('GitHub push OK, new SHA:', DATA_SHA);
-  }).catch(function(e) { console.log('GitHub push failed:', e); });
+    if (j && j.content) {
+      DATA_SHA = j.content.sha;
+      console.log('GitHub push OK, new SHA:', DATA_SHA);
+      setConnStatus(true);
+      return true;
+    }
+    return j === true; // retry returned true
+  }).catch(function(e) {
+    console.log('GitHub push failed:', e);
+    setConnStatus(API_ONLINE);
+    return false;
+  });
 }
 
 function setConnStatus(ok) {
@@ -1238,10 +1264,12 @@ function undoArchive() {
   DATA.history = newHistory;
   DATA._lastArchived = [];
   saveLocal();
-  pushToGitHub();
-  toast('\u{1F519} 已還原 ' + restored.length + ' 項');
   renderAll();
   updateHistoryBadge();
+  pushToGitHub().then(function(ok) {
+    if (ok) toast('\u{1F519} 已還原 ' + restored.length + ' 項 \u2705');
+    else toast('\u26A0\uFE0F 已還原 ' + restored.length + ' 項但同步失敗');
+  });
 }
 
 function showUndoToast(msg, undoFn) {
@@ -1579,16 +1607,20 @@ function restoreFromHistory(id) {
   delete item.archivedAt;
   DATA.history.splice(idx, 1);
   DATA.reminders.push(item);
-  saveLocal(); renderAll(); pushToGitHub(); updateHistoryBadge();
-  toast('\u{1F519} 已還原「' + item.name + '」');
+  saveLocal(); renderAll(); updateHistoryBadge();
+  pushToGitHub().then(function(ok) {
+    if (ok) toast('\u{1F519} 已還原「' + item.name + '」\u2705');
+    else toast('\u26A0\uFE0F 已還原「' + item.name + '」但同步失敗，稍後會自動重試');
+  });
 }
 
 function clearAllHistory() {
   showConfirm('確定要清除所有歷史記錄嗎？（此操作無法還原）', function() {
     DATA.history = [];
-    saveLocal(); renderAll(); pushToGitHub(); updateHistoryBadge();
-    toast('\u{1F5D1}\uFE0F 已清除所有歷史記錄');
-    closeConfirm();
+    saveLocal(); renderAll(); updateHistoryBadge(); closeConfirm();
+    pushToGitHub().then(function(ok) {
+      toast(ok ? '\u{1F5D1}\uFE0F 已清除所有歷史記錄 \u2705' : '\u26A0\uFE0F 清除本地成功但同步失敗');
+    });
   });
 }
 
@@ -1598,8 +1630,10 @@ function deleteReminderSafe(id, name, fromHistory) {
     // Permanent delete from history
     showConfirm('永久刪除「' + name + '」？', function() {
       DATA.history = (DATA.history || []).filter(function(x) { return x.id !== id; });
-      saveLocal(); renderAll(); pushToGitHub(); updateHistoryBadge(); closeConfirm();
-      toast('\u{1F5D1}\uFE0F 已永久刪除');
+      saveLocal(); renderAll(); updateHistoryBadge(); closeConfirm();
+      pushToGitHub().then(function(ok) {
+        toast(ok ? '\u{1F5D1}\uFE0F 已永久刪除 \u2705' : '\u26A0\uFE0F 本地已刪但同步失敗');
+      });
     });
   } else {
     // Move to history
@@ -1611,8 +1645,10 @@ function deleteReminderSafe(id, name, fromHistory) {
       if (!DATA.history) DATA.history = [];
       DATA.history.push(item);
       DATA.reminders.splice(idx, 1);
-      saveLocal(); renderAll(); pushToGitHub(); updateHistoryBadge(); closeConfirm();
-      toast('\u{1F4E6} 已移至歷史記錄');
+      saveLocal(); renderAll(); updateHistoryBadge(); closeConfirm();
+      pushToGitHub().then(function(ok) {
+        toast(ok ? '\u{1F4E6} 已移至歷史記錄 \u2705' : '\u26A0\uFE0F 本地已移但同步失敗');
+      });
     });
   }
 }
@@ -1813,8 +1849,10 @@ function saveReminder() {
       DATA.reminders.push(curPayload);
       addedNames.push(curName);
     }
-    saveLocal(); renderAll(); pushToGitHub(); updateHistoryBadge(); closeModal('modal-reminder');
-    toast('✅ 已新增 ' + totalDays + ' 項提醒（' + name + '）');
+    saveLocal(); renderAll(); updateHistoryBadge(); closeModal('modal-reminder');
+    pushToGitHub().then(function(ok) {
+      toast(ok ? '\u2705 已新增 ' + totalDays + ' 項提醒（' + name + '）' : '\u26A0\uFE0F 新增成功但同步失敗');
+    });
     return;
   }
 
@@ -1855,12 +1893,17 @@ function saveReminder() {
       }
       Object.assign(DATA.reminders[idx], payload);
     }
-    saveLocal(); renderAll(); pushToGitHub(); updateHistoryBadge(); closeModal('modal-reminder');
-    toast('\u2705 已更新「' + name + '」');
+    saveLocal(); renderAll(); updateHistoryBadge(); closeModal('modal-reminder');
+    pushToGitHub().then(function(ok) {
+      toast(ok ? '\u2705 已更新「' + name + '」' : '\u26A0\uFE0F 更新成功但同步失敗');
+    });
   } else {
     var item = Object.assign({ id: uid(), notified: false, caregiverNotified1d: false, caregiverNotified3h: false }, payload);
     DATA.reminders.push(item);
-    saveLocal(); renderAll(); pushToGitHub(); updateHistoryBadge(); closeModal('modal-reminder');
+    saveLocal(); renderAll(); updateHistoryBadge(); closeModal('modal-reminder');
+    pushToGitHub().then(function(ok) {
+      toast(ok ? '\u2705 已新增「' + name + '」' : '\u26A0\uFE0F 新增成功但同步失敗');
+    });
     toast('\u2705 已新增「' + name + '」');
   }
 }
@@ -1878,8 +1921,10 @@ function confirmDeleteReminder() {
     if (!DATA.history) DATA.history = [];
     DATA.history.push(item);
     DATA.reminders.splice(idx, 1);
-    saveLocal(); renderAll(); pushToGitHub(); updateHistoryBadge(); closeModal('modal-reminder'); closeConfirm();
-    toast('\u{1F4E6} 已移至歷史記錄');
+    saveLocal(); renderAll(); updateHistoryBadge(); closeModal('modal-reminder'); closeConfirm();
+    pushToGitHub().then(function(ok) {
+      toast(ok ? '\u{1F4E6} 已移至歷史記錄 \u2705' : '\u26A0\uFE0F 本地已移但同步失敗');
+    });
   });
 }
 
@@ -1918,15 +1963,19 @@ function saveBirthday() {
   if (orig && orig !== name) DATA.birthdays = DATA.birthdays.filter(function(x) { return x.name !== orig; });
   var ex = DATA.birthdays.findIndex(function(x) { return x.name === name; });
   if (ex >= 0) DATA.birthdays[ex] = item; else DATA.birthdays.push(item);
-  saveLocal(); renderAll(); pushToGitHub(); closeModal('modal-birthday');
-  toast('\u2705 已儲存 ' + name + ' 的生日');
+  saveLocal(); renderAll(); closeModal('modal-birthday');
+  pushToGitHub().then(function(ok) {
+    toast(ok ? '\u2705 已儲存 ' + name + ' 的生日' : '\u26A0\uFE0F 儲存成功但同步失敗');
+  });
 }
 function confirmDeleteBday() {
   var name = document.getElementById('bday-orig-name').value;
   showConfirm('確定要刪除 ' + name + ' 的生日嗎？', function() {
     DATA.birthdays = DATA.birthdays.filter(function(x) { return x.name !== name; });
-    saveLocal(); renderAll(); pushToGitHub(); closeModal('modal-birthday'); closeConfirm();
-    toast('\u{1F5D1}\uFE0F 已刪除 ' + name + ' 生日');
+    saveLocal(); renderAll(); closeModal('modal-birthday'); closeConfirm();
+    pushToGitHub().then(function(ok) {
+      toast(ok ? '\u{1F5D1}\uFE0F 已刪除 ' + name + ' 生日' : '\u26A0\uFE0F 本地已刪但同步失敗');
+    });
   });
 }
 
