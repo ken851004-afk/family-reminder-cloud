@@ -272,20 +272,6 @@
       "archivedAt": "2026-07-04T10:47:25.946Z"
     },
     {
-      "id": "r1782242069578xfj",
-      "notified": false,
-      "caregiverNotified1d": false,
-      "caregiverNotified3h": true,
-      "name": "VICTOR",
-      "date": "2026-07-03",
-      "time": "09:00",
-      "category": "work",
-      "caregiver": "KEN",
-      "note": "",
-      "repeat": "none",
-      "archivedAt": "2026-07-04T10:47:25.946Z"
-    },
-    {
       "id": "r1782265746097k83",
       "notified": false,
       "caregiverNotified1d": false,
@@ -355,16 +341,24 @@
       "note": "時間未知",
       "repeat": "none",
       "archivedAt": "2026-07-04T10:47:25.946Z"
+    },
+    {
+      "id": "r1782242069578xfj",
+      "notified": false,
+      "caregiverNotified1d": false,
+      "caregiverNotified3h": true,
+      "name": "VICTOR",
+      "date": "2026-07-03",
+      "time": "09:00",
+      "category": "work",
+      "caregiver": "KEN",
+      "note": "",
+      "repeat": "none",
+      "archivedAt": "2026-07-04T10:48:43.655Z"
     }
   ],
   "groupNotifications": [],
   "_lastArchived": [
-    "r1782033786303xqe",
-    "r1782242069578xfj",
-    "r1782265746097k83",
-    "r178229506385324z",
-    "r1782031274868tn8",
-    "r1782580962185vbc",
-    "r178258100875725i"
+    "r1782242069578xfj"
   ]
 }
