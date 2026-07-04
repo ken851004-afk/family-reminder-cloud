@@ -1174,9 +1174,13 @@ function pushToGitHub(retryCount) {
   }).then(function(r) {
     if (r.ok) return r.json();
     if (r.status === 409 && retryCount < 2) {
-      // SHA conflict — re-sync and retry
-      console.log('[GH] SHA conflict, re-syncing (retry ' + (retryCount+1) + ')...');
-      return syncFromGitHub().then(function() {
+      // SHA conflict — fetch ONLY new SHA, don't overwrite DATA
+      console.log('[GH] SHA conflict, fetching new SHA (retry ' + (retryCount+1) + ')...');
+      return fetch('https://api.github.com/repos/ken851004-afk/family-reminder-cloud/contents/data.json', {
+        headers: { 'Authorization': 'Bearer ' + token, 'Accept': 'application/vnd.github.v3+json' }
+      }).then(function(r2) { return r2.json(); })
+      .then(function(j2) {
+        DATA_SHA = j2.sha;  // update SHA only, keep local DATA changes
         return pushToGitHub(retryCount + 1);
       });
     }
