@@ -188,6 +188,19 @@
       "repeatDays": [
         3
       ]
+    },
+    {
+      "id": "r1783166093924ovt",
+      "notified": false,
+      "caregiverNotified1d": false,
+      "caregiverNotified3h": false,
+      "name": "小嘟家",
+      "date": "2026-07-17",
+      "time": "12:00",
+      "category": "activity",
+      "caregiver": "KEN",
+      "note": "",
+      "repeat": "none"
     }
   ],
   "birthdays": [
