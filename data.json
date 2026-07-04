@@ -69,20 +69,6 @@
       "address": ""
     },
     {
-      "id": "r1782033786303xqe",
-      "notified": false,
-      "name": "懇親會",
-      "date": "2026-07-02",
-      "time": "11:00",
-      "category": "special",
-      "caregiver": "EPPIE",
-      "note": "",
-      "repeat": "none",
-      "caregiverNotified1d": false,
-      "caregiverNotified3h": false,
-      "address": ""
-    },
-    {
       "id": "r1782033821850vvd",
       "notified": false,
       "name": "嶺南小學",
@@ -109,59 +95,6 @@
       "caregiverNotified1d": false,
       "caregiverNotified3h": false,
       "address": ""
-    },
-    {
-      "id": "r1782242069578xfj",
-      "notified": false,
-      "caregiverNotified1d": false,
-      "caregiverNotified3h": true,
-      "name": "VICTOR",
-      "date": "2026-07-03",
-      "time": "09:00",
-      "category": "work",
-      "caregiver": "KEN",
-      "note": "",
-      "repeat": "none"
-    },
-    {
-      "id": "r1782265746097k83",
-      "notified": false,
-      "caregiverNotified1d": false,
-      "caregiverNotified3h": false,
-      "name": "科學館",
-      "date": "2026-06-30",
-      "time": "14:30",
-      "category": "special",
-      "caregiver": "EPPIE",
-      "note": "同學仔",
-      "repeat": "none"
-    },
-    {
-      "id": "r178229506385324z",
-      "notified": false,
-      "caregiverNotified1d": false,
-      "caregiverNotified3h": false,
-      "name": "烏溪沙😭😭😭",
-      "date": "2026-06-29",
-      "time": "09:00",
-      "category": "work",
-      "caregiver": "KEN",
-      "note": "",
-      "repeat": "none"
-    },
-    {
-      "id": "r1782031274868tn8",
-      "notified": false,
-      "caregiverNotified1d": false,
-      "caregiverNotified3h": false,
-      "name": "優才",
-      "date": "2026-06-28",
-      "time": "16:45",
-      "category": "school",
-      "memberId": "ken",
-      "note": "調景嶺\n面試信",
-      "repeat": "none",
-      "caregiver": "Rosanna Mok"
     },
     {
       "id": "r1782533365556by6",
@@ -210,32 +143,6 @@
       "repeatDays": [
         3
       ]
-    },
-    {
-      "id": "r1782580962185vbc",
-      "notified": false,
-      "caregiverNotified1d": false,
-      "caregiverNotified3h": false,
-      "name": "LUX",
-      "date": "2026-06-28",
-      "time": "06:00",
-      "category": "work",
-      "caregiver": "KEN",
-      "note": "",
-      "repeat": "none"
-    },
-    {
-      "id": "r178258100875725i",
-      "notified": false,
-      "caregiverNotified1d": false,
-      "caregiverNotified3h": false,
-      "name": "lux",
-      "date": "2026-06-30",
-      "time": "09:00",
-      "category": "work",
-      "caregiver": "KEN",
-      "note": "時間未知",
-      "repeat": "none"
     },
     {
       "id": "r17825833211520y3",
@@ -348,6 +255,116 @@
   "sent_notifications": {},
   "_room": "",
   "_version": 15,
-  "history": [],
-  "groupNotifications": []
+  "history": [
+    {
+      "id": "r1782033786303xqe",
+      "notified": false,
+      "name": "懇親會",
+      "date": "2026-07-02",
+      "time": "11:00",
+      "category": "special",
+      "caregiver": "EPPIE",
+      "note": "",
+      "repeat": "none",
+      "caregiverNotified1d": false,
+      "caregiverNotified3h": false,
+      "address": "",
+      "archivedAt": "2026-07-04T10:47:25.946Z"
+    },
+    {
+      "id": "r1782242069578xfj",
+      "notified": false,
+      "caregiverNotified1d": false,
+      "caregiverNotified3h": true,
+      "name": "VICTOR",
+      "date": "2026-07-03",
+      "time": "09:00",
+      "category": "work",
+      "caregiver": "KEN",
+      "note": "",
+      "repeat": "none",
+      "archivedAt": "2026-07-04T10:47:25.946Z"
+    },
+    {
+      "id": "r1782265746097k83",
+      "notified": false,
+      "caregiverNotified1d": false,
+      "caregiverNotified3h": false,
+      "name": "科學館",
+      "date": "2026-06-30",
+      "time": "14:30",
+      "category": "special",
+      "caregiver": "EPPIE",
+      "note": "同學仔",
+      "repeat": "none",
+      "archivedAt": "2026-07-04T10:47:25.946Z"
+    },
+    {
+      "id": "r178229506385324z",
+      "notified": false,
+      "caregiverNotified1d": false,
+      "caregiverNotified3h": false,
+      "name": "烏溪沙😭😭😭",
+      "date": "2026-06-29",
+      "time": "09:00",
+      "category": "work",
+      "caregiver": "KEN",
+      "note": "",
+      "repeat": "none",
+      "archivedAt": "2026-07-04T10:47:25.946Z"
+    },
+    {
+      "id": "r1782031274868tn8",
+      "notified": false,
+      "caregiverNotified1d": false,
+      "caregiverNotified3h": false,
+      "name": "優才",
+      "date": "2026-06-28",
+      "time": "16:45",
+      "category": "school",
+      "memberId": "ken",
+      "note": "調景嶺\n面試信",
+      "repeat": "none",
+      "caregiver": "Rosanna Mok",
+      "archivedAt": "2026-07-04T10:47:25.946Z"
+    },
+    {
+      "id": "r1782580962185vbc",
+      "notified": false,
+      "caregiverNotified1d": false,
+      "caregiverNotified3h": false,
+      "name": "LUX",
+      "date": "2026-06-28",
+      "time": "06:00",
+      "category": "work",
+      "caregiver": "KEN",
+      "note": "",
+      "repeat": "none",
+      "archivedAt": "2026-07-04T10:47:25.946Z"
+    },
+    {
+      "id": "r178258100875725i",
+      "notified": false,
+      "caregiverNotified1d": false,
+      "caregiverNotified3h": false,
+      "name": "lux",
+      "date": "2026-06-30",
+      "time": "09:00",
+      "category": "work",
+      "caregiver": "KEN",
+      "note": "時間未知",
+      "repeat": "none",
+      "archivedAt": "2026-07-04T10:47:25.946Z"
+    }
+  ],
+  "groupNotifications": [],
+  "_lastArchived": [
+    "r1782033786303xqe",
+    "r1782242069578xfj",
+    "r1782265746097k83",
+    "r178229506385324z",
+    "r1782031274868tn8",
+    "r1782580962185vbc",
+    "r178258100875725i"
+  ]
 }
