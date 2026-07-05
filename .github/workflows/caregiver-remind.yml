@@ -2,66 +2,68 @@ name: Caregiver WhatsApp Reminder
 
 on:
   schedule:
-    - cron: '0 * * * *'    # 每小時正點觸發
+    - cron: '0 * * * *'  # Every hour
   workflow_dispatch:
 
 jobs:
   remind:
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: '22'
 
-      # 安裝 baileys（輕量，~2MB）
-      - name: Install baileys
-        run: npm install baileys
-
-      # 還原 WhatsApp auth state（由 WA_CREDS_B64 secret）
-      - name: Restore WhatsApp auth state
-        env:
-          WA_CREDS_B64: ${{ secrets.WA_CREDS_B64 }}
+      - name: Install wacli
         run: |
-          if [ -z "$WA_CREDS_B64" ]; then
-            echo "ERROR: WA_CREDS_B64 not set"
+          WACLI_VERSION="0.21.0"
+          URL="https://github.com/whatsmeow/wacli/releases/download/v${WACLI_VERSION}/wacli_Linux_x86_64.tar.gz"
+          curl -L "$URL" -o wacli.tar.gz
+          tar -xzf wacli.tar.gz
+          chmod +x wacli
+          sudo mv wacli /usr/local/bin/
+          wacli version
+
+      - name: Restore wacli session from secret
+        env:
+          WACLI_SESSION_B64: ${{ secrets.WACLI_SESSION_B64 }}
+        run: |
+          if [ -z "$WACLI_SESSION_B64" ]; then
+            echo "::error::WACLI_SESSION_B64 secret not set!"
+            echo "Please run: base64 -w0 ~/.wacli/session.db > session.b64"
+            echo "Then create GitHub secret WACLI_SESSION_B64 with that content"
             exit 1
           fi
-          mkdir -p /tmp/baileys-auth
-          # WA_CREDS_B64 = base64( tar.gz of auth_dir )
-          echo "$WA_CREDS_B64" | base64 -d > /tmp/wa-auth.tar.gz
-          tar -xzf /tmp/wa-auth.tar.gz -C /tmp/baileys-auth
-          echo "✅  WhatsApp auth state restored"
+          mkdir -p ~/.wacli
+          echo "$WACLI_SESSION_B64" | base64 -d > ~/.wacli/session.db
+          echo "Session restored, size: $(wc -c < ~/.wacli/session.db) bytes"
 
-      # 執行提醒發送
-      - name: Send caregiver reminders
+      - name: Install Node dependencies
+        run: npm install node-fetch@2
+
+      - name: Run caregiver reminder
         env:
-          WA_CREDS_B64: ${{ secrets.WA_CREDS_B64 }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          WACLI_PATH: /usr/local/bin/wacli
         run: node wa-caregiver-remind.js
 
-      # 自動更新 WA_CREDS_B64（auth state 可能已續期）
-      # 需要 WA_PAT secret：Personal Access Token（repo scope）
-      - name: Update WA_CREDS_B64 secret
-        if: success()
-        env:
-          WA_PAT: ${{ secrets.WA_PAT }}
+      - name: Save updated session to output
+        if: always()
         run: |
-          if [ ! -f /tmp/wa-auth-new.b64 ]; then
-            echo "No updated auth state - skipping secret update"
-            exit 0
+          if [ -f ~/.wacli/session.db ]; then
+            B64=$(base64 -w0 ~/.wacli/session.db)
+            echo "Updated session size: $(echo -n "$B64" | wc -c) chars"
+            echo "$B64" > /tmp/session-updated.b64
           fi
-          if [ -z "$WA_PAT" ]; then
-            echo "⚠️  WA_PAT not set - cannot auto-update WA_CREDS_B64"
-            echo "Please add WA_PAT secret (Personal Access Token with 'repo' scope)"
-            exit 0
-          fi
-          echo "Updating WA_CREDS_B64 secret..."
-          # 使用 WA_PAT 更新 secret
-          NEW_VAL=$(cat /tmp/wa-auth-new.b64)
-          echo -n "$NEW_VAL" | GH_TOKEN="$WA_PAT" gh secret set WA_CREDS_B64 \
-            --repo ken851004-afk/family-reminder-cloud \
-            --body -
-          echo "✅  WA_CREDS_B64 auto-updated"
+
+      - name: Upload updated session as artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: wacli-session-updated
+          path: /tmp/session-updated.b64
+          retention-days: 7
