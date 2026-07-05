@@ -1,26 +1,43 @@
-name: Caregiver Personal Reminder
+name: Caregiver WhatsApp Reminder
 
 on:
   schedule:
-    # Every hour
     - cron: '0 * * * *'
   workflow_dispatch:
 
 jobs:
-  send-reminder:
+  remind:
     runs-on: ubuntu-latest
-    timeout-minutes: 8
-    permissions:
-      contents: write
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Install dependencies
-        run: npm install baileys qrcode node-cache pino
+
+      - name: Install wacli
+        run: |
+          mkdir -p $HOME/.wacli
+          curl -L -o $HOME/.wacli/wacli https://github.com/whiskeysockets/wacli/releases/latest/download/wacli-linux
+          chmod +x $HOME/.wacli/wacli
+          echo "$HOME/.wacli" >> $GITHUB_PATH
+          wacli --version
+
+      - name: Restore wacli session
+        env:
+          WACLI_SESSION_B64: ${{ secrets.WACLI_SESSION_B64 }}
+        run: |
+          if [ -z "$WACLI_SESSION_B64" ]; then
+            echo "ERROR: WACLI_SESSION_B64 not set"
+            exit 1
+          fi
+          mkdir -p $HOME/.wacli
+          echo "$WACLI_SESSION_B64" | base64 -d > $HOME/.wacli/session.db
+          echo "wacli session restored"
+
       - name: Send caregiver reminders
         env:
           WA_CREDS_B64: ${{ secrets.WA_CREDS_B64 }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          WACLI_SESSION_B64: ${{ secrets.WACLI_SESSION_B64 }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: node wa-caregiver-remind.js
