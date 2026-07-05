@@ -2,7 +2,7 @@ name: Caregiver WhatsApp Reminder
 
 on:
   schedule:
-    - cron: '0 * * * *'  # Every hour
+    - cron: '0 * * * *'
   workflow_dispatch:
 
 jobs:
@@ -13,6 +13,8 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GH_PAT }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -29,41 +31,38 @@ jobs:
           sudo mv wacli /usr/local/bin/
           wacli version
 
-      - name: Restore wacli session from secret
+      - name: Decrypt session
         env:
-          WACLI_SESSION_B64: ${{ secrets.WACLI_SESSION_B64 }}
+          WACLI_SESSION_KEY: ${{ secrets.WACLI_SESSION_KEY }}
         run: |
-          if [ -z "$WACLI_SESSION_B64" ]; then
-            echo "::error::WACLI_SESSION_B64 secret not set!"
-            echo "Please run: base64 -w0 ~/.wacli/session.db > session.b64"
-            echo "Then create GitHub secret WACLI_SESSION_B64 with that content"
+          if [ ! -f session.db.enc ]; then
+            echo "::error::session.db.enc not found in repo. Run setup locally first."
             exit 1
           fi
           mkdir -p ~/.wacli
-          echo "$WACLI_SESSION_B64" | base64 -d > ~/.wacli/session.db
-          echo "Session restored, size: $(wc -c < ~/.wacli/session.db) bytes"
+          node decrypt-session.js session.db.enc ~/.wacli/session.db
+          echo "Session decrypted"
 
-      - name: Install Node dependencies
+      - name: Install Node deps
         run: npm install node-fetch@2
 
-      - name: Run caregiver reminder
+      - name: Run reminder
         env:
           WACLI_PATH: /usr/local/bin/wacli
         run: node wa-caregiver-remind.js
 
-      - name: Save updated session to output
+      - name: Re-encrypt and commit session
         if: always()
+        env:
+          WACLI_SESSION_KEY: ${{ secrets.WACLI_SESSION_KEY }}
         run: |
           if [ -f ~/.wacli/session.db ]; then
-            B64=$(base64 -w0 ~/.wacli/session.db)
-            echo "Updated session size: $(echo -n "$B64" | wc -c) chars"
-            echo "$B64" > /tmp/session-updated.b64
+            node encrypt-session.js ~/.wacli/session.db
+            cp /tmp/session.db.enc session.db.enc
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add session.db.enc
+            git commit -m "Update encrypted wacli session" || echo "No changes"
+            git push
+            echo "Encrypted session committed"
           fi
-
-      - name: Upload updated session as artifact
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: wacli-session-updated
-          path: /tmp/session-updated.b64
-          retention-days: 7
