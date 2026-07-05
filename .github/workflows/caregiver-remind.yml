@@ -1,4 +1,6 @@
-name: Caregiver WhatsApp Reminder
+name: Caregiver WhatsApp Reminder (DISABLED)
+# 已停用 - 請使用本地服務 local-reminder-service.js
+# 啟用方法：喺本機執行 node local-reminder-service.js
 
 on:
   schedule:
@@ -8,61 +10,5 @@ on:
 jobs:
   remind:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
-    permissions:
-      contents: write
-
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-
-      - name: Install wacli
-        run: |
-          WACLI_VERSION="0.21.0"
-          URL="https://github.com/whatsmeow/wacli/releases/download/v${WACLI_VERSION}/wacli_Linux_x86_64.tar.gz"
-          curl -L "$URL" -o wacli.tar.gz
-          tar -xzf wacli.tar.gz
-          chmod +x wacli
-          sudo mv wacli /usr/local/bin/
-          wacli version
-
-      - name: Decrypt session
-        env:
-          WACLI_SESSION_KEY: ${{ secrets.WACLI_SESSION_KEY }}
-        run: |
-          if [ ! -f session.db.enc ]; then
-            echo "::error::session.db.enc not found in repo. Run setup locally first."
-            exit 1
-          fi
-          mkdir -p ~/.wacli
-          node decrypt-session.js session.db.enc ~/.wacli/session.db
-          echo "Session decrypted"
-
-      - name: Install Node deps
-        run: npm install node-fetch@2
-
-      - name: Run reminder
-        env:
-          WACLI_PATH: /usr/local/bin/wacli
-        run: node wa-caregiver-remind.js
-
-      - name: Re-encrypt and commit session
-        if: always()
-        env:
-          WACLI_SESSION_KEY: ${{ secrets.WACLI_SESSION_KEY }}
-        run: |
-          if [ -f ~/.wacli/session.db ]; then
-            node encrypt-session.js ~/.wacli/session.db
-            cp /tmp/session.db.enc session.db.enc
-            git config user.name "github-actions[bot]"
-            git config user.email "github-actions[bot]@users.noreply.github.com"
-            git add session.db.enc
-            git commit -m "Update encrypted wacli session" || echo "No changes"
-            git push
-            echo "Encrypted session committed"
-          fi
+      - run: echo "DISABLED - use local service local-reminder-service.js"
