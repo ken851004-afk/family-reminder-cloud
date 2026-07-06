@@ -3,9 +3,9 @@ const path = require('path');
 const https = require('https');
 const { spawn } = require('child_process');
 
-// 配置
+// 配置 - 使用环境变量或默认路径
 const DATA_URL = 'https://raw.githubusercontent.com/ken851004-afk/family-reminder-cloud/master/data.json';
-const WACLI_PATH = 'C:\\Users\\KEN85\\.workbuddy\\binaries\\wacli\\wacli.exe';
+const WACLI_PATH = process.env.WACLI_PATH || process.env.WACLI || 'C:\\Users\\KEN85\\.workbuddy\\binaries\\wacli\\wacli.exe';
 const STATE_FILE = path.join(__dirname, 'reminder-state.json');
 const LOG_FILE = path.join(__dirname, 'reminder-log.txt');
 
@@ -31,13 +31,29 @@ function log(msg) {
 // 下載 data.json
 function fetchData() {
   return new Promise((resolve, reject) => {
-    https.get(DATA_URL, (res) => {
+    const url = new URL(DATA_URL);
+    const req = https.get({
+      hostname: url.hostname,
+      path: url.pathname,
+      timeout: 10000
+    }, (res) => {
+      if (res.statusCode !== 200) {
+        reject(new Error(`HTTP ${res.statusCode}`));
+        return;
+      }
+      
       let data = '';
       res.on('data', chunk => data += chunk);
       res.on('end', () => {
         try { resolve(JSON.parse(data)); } catch (e) { reject(e); }
       });
-    }).on('error', reject);
+    });
+    
+    req.on('error', reject);
+    req.on('timeout', () => {
+      req.destroy();
+      reject(new Error('Timeout'));
+    });
   });
 }
 
@@ -147,6 +163,7 @@ function cleanupState(state) {
 // 主循環
 async function main() {
   log('🚀 Reminder service started');
+  log(`Using wacli: ${WACLI_PATH}`);
 
   // 每分鐘檢查一次
   setInterval(async () => {
