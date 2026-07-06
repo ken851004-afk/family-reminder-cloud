@@ -11,6 +11,7 @@ REM 設定路徑
 set REPO_DIR=%USERPROFILE%\WorkBuddy\family-reminder-cloud
 set WACLI=%USERPROFILE%\.workbuddy\binaries\wacli\wacli.exe
 set NODE=%USERPROFILE%\.workbuddy\binaries\node\versions\22.12.0\node.exe
+set WACLI_PATH=%WACLI%
 
 REM 1. 檢查 wacli 認證
 echo [1/4] 檢查 WhatsApp 認證...
