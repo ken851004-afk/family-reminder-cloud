@@ -559,6 +559,22 @@ body::before { content:''; position:fixed; top:0; left:0; right:0; bottom:0; bac
       <p>設定 GitHub Personal Access Token 以啟用雲端同步</p>
       <button class="btn btn-outline" style="width:auto;margin-top:0;" onclick="openSettingsModal()">&#9881; 設定 Token</button>
     </div>
+
+    <div class="settings-card">
+      <h3>&#128276; 推送通知 (Web Push)</h3>
+      <p>當提醒到期時，手機/iPad 會收到推送通知（不需 WhatsApp）</p>
+      <div style="font-size:12px;color:#6b7280;line-height:2;">
+        <div>通知狀態：<strong id="stat-push">檢查中...</strong></div>
+        <div>訂閱裝置：<strong id="stat-push-count">-</strong></div>
+      </div>
+      <div class="form-group" style="margin-top:10px;">
+        <label class="form-label">Push Server 網址</label>
+        <input class="form-input" id="push-server-input" placeholder="http://192.168.x.x:3748" style="font-size:13px;" onchange="savePushServerUrl()">
+        <span style="font-size:10px;color:#999;">同一 WiFi 下輸入電腦 LAN IP（例：192.168.1.100）</span>
+      </div>
+      <button class="btn btn-outline" style="width:auto;margin-top:8px;" onclick="subscribePush()">&#128276; 開啟通知</button>
+      <button class="btn btn-outline" style="width:auto;margin-top:4px;" onclick="togglePushNotif()">&#128260; 重新整理狀態</button>
+    </div>
   </div>
 
 </div>
@@ -2299,12 +2315,49 @@ function initPushUI() {
   if (!btn) return;
   btn.style.display = '';
 
+  // Load saved server URL
+  var savedUrl = localStorage.getItem('push-server-url');
+  var input = document.getElementById('push-server-input');
+  if (input && savedUrl) input.value = savedUrl;
+
   // Check current subscription
   if (_swReg) {
     _swReg.pushManager.getSubscription().then(function(sub) {
       _pushSub = sub;
       updateBellUI();
+      updatePushStats();
     });
+  }
+
+  // Fetch server status
+  fetchPushStatus();
+}
+
+function fetchPushStatus() {
+  fetch(PUSH_SERVER + '/status')
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      var statEl = document.getElementById('stat-push-count');
+      if (statEl) statEl.textContent = d.subscribers + ' 部裝置在線';
+    })
+    .catch(function() {
+      var statEl = document.getElementById('stat-push-count');
+      if (statEl) statEl.textContent = '無法連接（請確認 push server 運行中）';
+    });
+}
+
+function savePushServerUrl() {
+  var input = document.getElementById('push-server-input');
+  if (!input) return;
+  var url = input.value.trim();
+  if (url) {
+    localStorage.setItem('push-server-url', url);
+    PUSH_SERVER = url;
+    toast('Push Server 已設為 ' + url);
+    fetchPushStatus();
+  } else {
+    localStorage.removeItem('push-server-url');
+    toast('已清除 Push Server 設定');
   }
 }
 
@@ -2317,6 +2370,19 @@ function updateBellUI() {
   } else {
     btn.style.opacity = '0.5';
     btn.title = '通知已關閉 (點擊開啟)';
+  }
+  updatePushStats();
+}
+
+function updatePushStats() {
+  var statEl = document.getElementById('stat-push');
+  if (!statEl) return;
+  if (_pushSub) {
+    statEl.innerHTML = '<span style="color:#10b981;">&#9989; 已啟用</span>';
+  } else if (Notification.permission === 'denied') {
+    statEl.innerHTML = '<span style="color:#ef4444;">&#10060; 已封鎖（請到瀏覽器設定開啟）</span>';
+  } else {
+    statEl.innerHTML = '<span style="color:#f59e0b;">&#9888; 未啟用</span>';
   }
 }
 
@@ -2359,7 +2425,13 @@ function subscribePush() {
     })
     .catch(function(e) {
       console.log('Subscribe failed:', e);
-      toast('通知開啟失敗：' + (e.message || '請確認 push server 運行中'));
+      _pushSub = null;
+      updateBellUI();
+      if (e.message && e.message.includes('fetch')) {
+        toast('無法連接 Push Server！請在設定頁輸入電腦 LAN IP');
+      } else {
+        toast('通知開啟失敗：' + (e.message || '未知錯誤'));
+      }
     });
   }
 
