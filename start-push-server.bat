@@ -13,5 +13,5 @@ echo ============================================
 echo.
 
 set NODE_PATH=%~dp0node_modules
-"%~dp0node_modules\.bin\..\..\..\.workbuddy\binaries\node\versions\22.12.0\node.exe" "%~dp0push-server.js"
+"C:\Users\KEN85\.workbuddy\binaries\node\versions\22.12.0\node.exe" "%~dp0push-server.js"
 pause
