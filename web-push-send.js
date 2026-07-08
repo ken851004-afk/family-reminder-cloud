@@ -1,5 +1,7 @@
 // Web Push sender — runs on GitHub Actions (every 5 min)
-// Reads family-reminder-cloud/data.json, pushes due reminders to all subscribed devices.
+// 讀 family-reminder-cloud/data.json（只讀），push 到期提醒畀所有 subscribed device
+// 去重狀態寫入 push-state.json（Actions 專屬檔，唔會同前端 UI 編輯撞 409）
+// v3-B 加固：data.json 完全唔寫，消除同前端嘅 SHA 衝突
 const TOKEN = process.env.GITHUB_TOKEN || process.env.GH_TOKEN || process.env.GH_PAT;
 const REPO = process.env.GH_REPO || 'ken851004-afk/family-reminder-cloud';
 const VAPID_PRIVATE = process.env.VAPID_PRIVATE_KEY;
@@ -14,6 +16,7 @@ async function getFile(path) {
     headers: { Authorization: `Bearer ${TOKEN}`, Accept: 'application/vnd.github.v3+json' }
   });
   const json = await res.json();
+  if (res.status === 404) return { data: null, sha: null };
   if (!res.ok) throw new Error('GET failed: ' + json.message);
   const content = Buffer.from(json.content, 'base64').toString('utf8');
   return { data: JSON.parse(content), sha: json.sha };
@@ -22,14 +25,16 @@ async function getFile(path) {
 async function putFile(path, data, sha, message, attempt) {
   attempt = attempt || 0;
   const b64 = Buffer.from(JSON.stringify(data, null, 2)).toString('base64');
+  const body = sha
+    ? { message, content: b64, sha }
+    : { message, content: b64 };
   const res = await fetch(`https://api.github.com/repos/${REPO}/contents/${path}`, {
     method: 'PUT',
     headers: { Authorization: `Bearer ${TOKEN}`, Accept: 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
-    body: JSON.stringify({ message, content: b64, sha })
+    body: JSON.stringify(body)
   });
   if (res.ok) return await res.json();
   if (res.status === 409 && attempt < 3) {
-    // SHA conflict — re-read and retry (re-apply markings)
     console.log('PUT 409, retrying (' + (attempt + 1) + ')...');
     const fresh = await getFile(path);
     return putFile(path, data, fresh.sha, message, attempt + 1);
@@ -72,13 +77,20 @@ function occKey(r, date) {
 }
 
 async function main() {
-  const { data, sha } = await getFile('data.json');
+  const { data } = await getFile('data.json');
+  if (!data) { console.log('data.json missing'); return; }
   const subs = data.pushSubscriptions || [];
   if (!subs.length) { console.log('No push subscriptions — skip'); return; }
+
+  // 讀去重狀態（Actions 專屬檔）
+  const stateFile = await getFile('push-state.json');
+  const state = stateFile.data || { dedup: {}, deadSubs: [] };
+  state.dedup = state.dedup || {};
+  state.deadSubs = state.deadSubs || [];
+
   const now = new Date();
-  let changed = false;
   let pushCount = 0;
-  let expired = [];
+  let deadCount = 0;
 
   for (const r of (data.reminders || [])) {
     const next = getNextOccurrence(r, now);
@@ -87,7 +99,7 @@ async function main() {
     // due within next 5 min, or up to 1 min past
     if (diff >= -60000 && diff <= 300000) {
       const key = occKey(r, next);
-      if (r._lastPushKey === key) continue; // already pushed this occurrence
+      if (state.dedup[r.id] === key) continue; // 已 push 過呢次
       const payload = JSON.stringify({
         title: '⏰ ' + r.name,
         body: (r.time && r.time !== '00:00' ? '🕐 ' + r.time + '  ' : '') +
@@ -97,30 +109,29 @@ async function main() {
         url: '/'
       });
       for (const s of subs) {
+        if (state.deadSubs.indexOf(s.endpoint) >= 0) continue; // 跳過死端點
         try {
           await webpush.sendNotification({ endpoint: s.endpoint, keys: s.keys }, payload);
           pushCount++;
         } catch (e) {
           const code = e.statusCode;
-          console.log('push fail', s.endpoint.slice(0, 45), code || e.message);
-          if (code === 404 || code === 410) expired.push(s.endpoint);
+          if (code === 404 || code === 410) {
+            if (state.deadSubs.indexOf(s.endpoint) < 0) state.deadSubs.push(s.endpoint);
+            deadCount++;
+            console.log('dead sub marked', s.endpoint.slice(0, 45));
+          } else {
+            console.log('push fail', s.endpoint.slice(0, 45), code || e.message);
+          }
         }
       }
-      r._lastPushKey = key;
-      changed = true;
+      state.dedup[r.id] = key;
     }
   }
 
-  if (expired.length) {
-    data.pushSubscriptions = (data.pushSubscriptions || []).filter(function(s) {
-      return expired.indexOf(s.endpoint) < 0;
-    });
-    changed = true;
-  }
-
-  if (changed) {
-    await putFile('data.json', data, sha, 'web-push: send due reminders');
-    console.log('Pushed ' + pushCount + ' notification(s), removed ' + expired.length + ' expired sub(s)');
+  // 只寫 push-state.json（唔寫 data.json → 唔會同前端 UI 撞 409）
+  if (pushCount > 0 || deadCount > 0) {
+    await putFile('push-state.json', state, stateFile.sha, 'web-push: update dedup/deadSubs');
+    console.log('Pushed ' + pushCount + ' notification(s), marked ' + deadCount + ' dead sub(s)');
   } else {
     console.log('No due reminders to push');
   }

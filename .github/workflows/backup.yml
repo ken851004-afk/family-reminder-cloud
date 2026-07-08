@@ -1,0 +1,58 @@
+name: Backup data.json
+
+on:
+  schedule:
+    - cron: '17 */6 * * *'   # 每 6 小時（:17 避開整點高峰）
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Backup data.json + push-state.json
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -e
+          TS=$(date -u +%Y%m%d-%H%M%S)
+          mkdir -p backups
+
+          # 下載最新 data.json / push-state.json
+          curl -s -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github.v3+json" \
+            "https://api.github.com/repos/$REPO/contents/data.json" \
+            | python3 -c "import sys,json,base64; d=json.load(sys.stdin); open('backups/data-$TS.json','w').write(base64.b64decode(d['content']).decode('utf-8'))"
+
+          curl -s -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github.v3+json" \
+            "https://api.github.com/repos/$REPO/contents/push-state.json" \
+            | python3 -c "import sys,json,base64; d=json.load(sys.stdin); open('backups/push-state-$TS.json','w').write(base64.b64decode(d['content']).decode('utf-8'))" \
+            || echo "push-state.json not present yet, skip"
+
+          # 保留最近 30 個備份，舊嘅刪走
+          ls -1t backups/data-*.json | tail -n +31 | xargs -r rm -f
+          ls -1t backups/push-state-*.json | tail -n +31 | xargs -r rm -f
+
+          echo "=== backups dir ==="
+          ls -1 backups/ | head -40
+
+      - name: Commit backups
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add backups/
+          if git diff --cached --quiet; then
+            echo "nothing to commit"
+          else
+            git commit -m "backup: auto snapshot $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            git push
+          fi
