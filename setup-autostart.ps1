@@ -5,7 +5,7 @@ $ErrorActionPreference = "Stop"
 
 $WACLI_PATH = "$env:USERPROFILE\.workbuddy\binaries\wacli\wacli.exe"
 $NODE_PATH = "$env:USERPROFILE\.workbuddy\binaries\node\versions\22.12.0\node.exe"
-$REPO_DIR = "$env:USERPROFILE\WorkBuddy\family-reminder-cloud"
+$REPO_DIR = $PSScriptRoot
 $SVC_JS = "$REPO_DIR\local-reminder-service.js"
 $TASK_NAME = "FamilyReminderService"
 

@@ -1,0 +1,36 @@
+name: Deploy Site (CI/CD)
+
+# 自動化部署：push 到 master 即自動發布網站到 GitHub Pages (gh-pages 分支)
+# 取代以往人手 git clone/push 嘅部署流程
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build site directory
+        run: |
+          mkdir -p _site
+          cp index.html sw.js download.html _site/ 2>/dev/null || true
+          echo "Site files:"
+          ls -la _site/
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./_site
+          publish_branch: gh-pages
+          force_orphan: true
+          commit_message: "deploy: auto-publish site"

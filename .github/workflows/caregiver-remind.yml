@@ -1,14 +1,28 @@
-name: Caregiver WhatsApp Reminder (DISABLED)
-# 已停用 - 請使用本地服務 local-reminder-service.js
-# 啟用方法：喺本機執行 node local-reminder-service.js
+name: Caregiver WhatsApp Reminder (Cloud — disabled)
+
+# ============================================================================
+# WhatsApp 提醒而家由本地服務處理（唔再依賴呢個雲端 workflow）：
+#   - 用家部機常駐運行 local-reminder-service.js（wacli 已重新連線）
+#   - setup-autostart.ps1 設定開機自動啟動
+#   - 網頁 UI 嘅「發送」按鈕會將訊息放入 pendingMessages，本地服務會自動發出
+#
+# 呢個 workflow 已停用自動排程，改為手動觸發 (workflow_dispatch)，
+# 避免 session.db.enc 缺失引致嘅失敗通知。
+# 如需雲端備援，請先生成 session.db.enc 並設定 WACLI_SESSION_KEY secret。
+# ============================================================================
 
 on:
-  schedule:
-    - cron: '0 * * * *'
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
-  remind:
+  info:
     runs-on: ubuntu-latest
     steps:
-      - run: echo "DISABLED - use local service local-reminder-service.js"
+      - name: Status
+        run: |
+          echo "☁️ Cloud WhatsApp reminder is DISABLED."
+          echo "✅ Local service (local-reminder-service.js) handles reminders on the always-on PC."
+          echo "📋 See README / REMINDER-SETUP.md for setup."
