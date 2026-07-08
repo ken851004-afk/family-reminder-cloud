@@ -18,7 +18,7 @@ concurrency:
 jobs:
   push:
     runs-on: ubuntu-latest
-    timeout-minutes: 4
+    timeout-minutes: 7
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -33,12 +33,18 @@ jobs:
           VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
           VAPID_PUBLIC_KEY: ${{ secrets.VAPID_PUBLIC_KEY }}
         run: node web-push-send.js
-      - name: Re-arm timer (self-perpetuate next run)
+      - name: Re-arm timer (self-perpetuate next run, ~5 min cadence)
         if: always()
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ken851004-afk/family-reminder-cloud
         run: |
+          # Keep cadence ~5 min: sleep most of the interval so a runner isn't
+          # churning every few seconds (avoids WhatsApp/npm thrash + API rate limit).
+          # Cost is fixed at ~43.2k min/month either way (a runner is always active);
+          # the sleep just sets the reminder check granularity.
+          echo "⏳ Sleeping ~4m15s before re-arming (target 5-min cadence)…"
+          sleep 255
           for i in 1 2 3; do
             if gh workflow run web-push.yml --ref "${{ github.ref_name }}"; then
               echo "✅ Re-armed web-push timer (attempt $i)"
