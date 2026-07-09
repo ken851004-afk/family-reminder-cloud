@@ -183,6 +183,45 @@
       "caregiver": "EPPIE",
       "note": "帶學生證",
       "repeat": "none"
+    },
+    {
+      "name": "名古屋 (第2日/4日)",
+      "date": "2026-07-09",
+      "time": "10:00",
+      "category": "travel",
+      "caregiver": "Rosanna Mok",
+      "note": "",
+      "repeat": "none",
+      "id": "r1783583049228dm2",
+      "notified": false,
+      "caregiverNotified1d": false,
+      "caregiverNotified3h": false
+    },
+    {
+      "name": "名古屋 (第3日/4日)",
+      "date": "2026-07-10",
+      "time": "10:00",
+      "category": "travel",
+      "caregiver": "Rosanna Mok",
+      "note": "",
+      "repeat": "none",
+      "id": "r1783583049228a7i",
+      "notified": false,
+      "caregiverNotified1d": false,
+      "caregiverNotified3h": false
+    },
+    {
+      "name": "名古屋 (第4日/4日)",
+      "date": "2026-07-11",
+      "time": "10:00",
+      "category": "travel",
+      "caregiver": "Rosanna Mok",
+      "note": "",
+      "repeat": "none",
+      "id": "r1783583049228kzl",
+      "notified": false,
+      "caregiverNotified1d": false,
+      "caregiverNotified3h": false
     }
   ],
   "birthdays": [
@@ -449,11 +488,25 @@
       "note": "",
       "repeat": "none",
       "archivedAt": "2026-07-08T19:54:50.362Z"
+    },
+    {
+      "name": "名古屋 (第1日/4日)",
+      "date": "2026-07-08",
+      "time": "10:00",
+      "category": "travel",
+      "caregiver": "Rosanna Mok",
+      "note": "",
+      "repeat": "none",
+      "id": "r1783583049228v0p",
+      "notified": false,
+      "caregiverNotified1d": false,
+      "caregiverNotified3h": false,
+      "archivedAt": "2026-07-09T07:44:09.228Z"
     }
   ],
   "groupNotifications": [],
   "_lastArchived": [
-    "r1783425391822ao0"
+    "r1783583049228v0p"
   ],
   "pushSubscriptions": [
     {
