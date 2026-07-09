@@ -1,4 +1,4 @@
-name: Caregiver WhatsApp Reminder (Cloud API)
+name: Caregiver WhatsApp Reminder (CallMeBot)
 
 on:
   schedule:
@@ -19,12 +19,15 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'   # Node 22 has global fetch — no baileys needed
-      - name: Send caregiver reminders (WhatsApp Cloud API)
+      - name: Send caregiver reminders (CallMeBot WhatsApp Gateway)
         env:
-          WA_API_TOKEN: ${{ secrets.WA_API_TOKEN }}
-          WA_PHONE_ID:  ${{ secrets.WA_PHONE_ID }}
-          WA_TEMPLATE:  ${{ secrets.WA_TEMPLATE }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CALLMEBOT_KEN:     ${{ secrets.CALLMEBOT_KEN }}
+          CALLMEBOT_EPPIE:   ${{ secrets.CALLMEBOT_EPPIE }}
+          CALLMEBOT_KENNY:   ${{ secrets.CALLMEBOT_KENNY }}
+          CALLMEBOT_ROSANNA: ${{ secrets.CALLMEBOT_ROSANNA }}
+          CALLMEBOT_COFFE:   ${{ secrets.CALLMEBOT_COFFE }}
+          CALLMEBOT_LODOU:   ${{ secrets.CALLMEBOT_LODOU }}
+          GITHUB_TOKEN:      ${{ secrets.GITHUB_TOKEN }}
         run: node wa-caregiver-remind.js
       # Driven 24/7 by external hourly triggers (WorkBuddy automation +
       # optional Google Apps Script watchdog) via repository_dispatch

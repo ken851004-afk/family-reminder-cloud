@@ -1,19 +1,22 @@
 /**
- * GitHub Actions: 照顧者個人 WhatsApp 提醒 (WhatsApp Business Cloud API)
+ * GitHub Actions: 照顧者個人 WhatsApp 提醒 (CallMeBot Gateway)
  * - 提早 1 天提醒（每日 09:00 HKT 發送）
  * - 提早 3 小時提醒（每小時檢查）
  *
- * 發送層：Meta Graph API (WhatsApp Business Cloud API)
+ * 發送層：CallMeBot WhatsApp Gateway
  *   - 永遠唔使掃 QR、唔使 baileys session
- *   - 用永久 access token，set-and-forget
+ *   - 用永久 API key（每位照顧者向 @CallMeBot 拎一次）
+ *   - 雲端 GitHub Actions 直接 call，唔使開電腦
  *
- * Env:
- *   WA_API_TOKEN   Meta 永久 access token (system/user token)
- *   WA_PHONE_ID    WhatsApp Business 號碼 ID (Meta App > WhatsApp > 號碼)
- *   WA_TEMPLATE    模板名稱 (預設: family_reminder) — 主動提醒必須用模板
- *   WA_FREEFORM    設 1 則改用 free-form 文字 (只係 24h 客服窗口內有效，用嚟快速測試)
- *   GITHUB_TOKEN   GitHub token (讀寫 data.json)
- *   GITHUB_REPO    ken851004-afk/family-reminder-cloud
+ * Env (GitHub Secrets):
+ *   CALLMEBOT_KEN      KEN 嘅 CallMeBot API key
+ *   CALLMEBOT_EPPIE    EPPIE 嘅 CallMeBot API key
+ *   CALLMEBOT_KENNY    Kenny Yam 嘅 CallMeBot API key
+ *   CALLMEBOT_ROSANNA  Rosanna Mok 嘅 CallMeBot API key
+ *   CALLMEBOT_COFFE    COFFE 嘅 CallMeBot API key
+ *   CALLMEBOT_LODOU   老豆 嘅 CallMeBot API key (optional)
+ *   GITHUB_TOKEN       GitHub token (讀寫 data.json)
+ *   GITHUB_REPO        ken851004-afk/family-reminder-cloud
  */
 
 const https = require('https');
@@ -28,12 +31,18 @@ const CAREGIVER_PHONES = {
   '老豆':        { phone: '85262269100',  name: '老豆' }
 };
 
+// ===== CallMeBot API keys (per caregiver, from GitHub Secrets) =====
+const CALLMEBOT_KEYS = {
+  'KEN':         process.env.CALLMEBOT_KEN,
+  'EPPIE':       process.env.CALLMEBOT_EPPIE,
+  'Kenny Yam':   process.env.CALLMEBOT_KENNY,
+  'Rosanna Mok': process.env.CALLMEBOT_ROSANNA,
+  'COFFE':       process.env.CALLMEBOT_COFFE,
+  '老豆':        process.env.CALLMEBOT_LODOU,
+};
+
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN || process.env.GH_PAT;
 const GITHUB_REPO  = process.env.GITHUB_REPO || 'ken851004-afk/family-reminder-cloud';
-const WA_API_TOKEN = process.env.WA_API_TOKEN;
-const WA_PHONE_ID  = process.env.WA_PHONE_ID;
-const WA_TEMPLATE  = process.env.WA_TEMPLATE || 'family_reminder';
-const WA_FREEFORM  = process.env.WA_FREEFORM === '1';
 
 const CAT_ICONS = { school: '🏫', class: '🎨', special: '⭐', summer: '☀️', routine: '📅' };
 const DAY_NAMES = ['日','一','二','三','四','五','六'];
@@ -116,64 +125,46 @@ function buildCaregiverMsg(r, type) {
   return msg;
 }
 
-// ===== WhatsApp Cloud API send =====
-async function sendWhatsApp(to, r, type) {
-  const url = `https://graph.facebook.com/v19.0/${WA_PHONE_ID}/messages`;
-  const body = WA_FREEFORM
-    ? { messaging_product: 'whatsapp', to, type: 'text', text: { body: buildCaregiverMsg(r, type) } }
-    : {
-        messaging_product: 'whatsapp',
-        to,
-        type: 'template',
-        template: {
-          name: WA_TEMPLATE,
-          language: { code: 'zh_HK' },
-          components: [{
-            type: 'body',
-            parameters: [
-              { type: 'text', text: `${type === '1day' ? '⏰ 提早一天提醒' : '🚨 三小時後提醒'} ${r.name}` },
-              { type: 'text', text: `${formatDate(r.date)} ${r.time && r.time !== '00:00' ? r.time : ''}`.trim() },
-              { type: 'text', text: r.note || '—' },
-            ],
-          }],
-        },
-      };
-
+// ===== CallMeBot WhatsApp Gateway send =====
+// Docs: https://www.callmebot.com/blog/free-api-whatsapp-messages
+// GET https://api.callmebot.com/whatsapp.php?phone=PHONE&text=TEXT&apikey=APIKEY
+async function sendCallMeBot(caregiver, text) {
+  const key = CALLMEBOT_KEYS[caregiver];
+  const phone = CAREGIVER_PHONES[caregiver] && CAREGIVER_PHONES[caregiver].phone;
+  if (!key || !phone) {
+    console.log(`[SKIP] ${caregiver}: 無 CallMeBot key/電話，跳過`);
+    return false;
+  }
+  const url = `https://api.callmebot.com/whatsapp.php?phone=${phone}&text=${encodeURIComponent(text)}&apikey=${encodeURIComponent(key)}`;
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 30000);
   try {
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${WA_API_TOKEN}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(body),
-      signal: controller.signal,
-    });
-    const json = await res.json();
+    const res = await fetch(url, { signal: controller.signal });
+    const body = await res.text();
     clearTimeout(timer);
-    if (json.error) {
-      console.error(`[WA] ✗ ${to}: ${json.error.error_subcode || json.error.code} ${json.error.message}`);
+    if (res.status === 200) {
+      console.log(`[CALLMEBOT] ✓ ${caregiver} (${phone}): 已排隊發送`);
+      return true;
+    } else {
+      console.error(`[CALLMEBOT] ✗ ${caregiver} (${phone}): HTTP ${res.status} ${body.slice(0, 120)}`);
       return false;
     }
-    console.log(`[WA] ✓ ${to} (${r.name}) [${type}] id=${json.messages?.[0]?.id || 'n/a'}`);
-    return true;
   } catch (e) {
     clearTimeout(timer);
-    console.error(`[WA] ✗ ${to}: ${e.message}`);
+    console.error(`[CALLMEBOT] ✗ ${caregiver} (${phone}): ${e.message}`);
     return false;
   }
 }
 
 // ===== Main =====
 async function main() {
-  console.log('=== Caregiver WhatsApp Reminder (Cloud API) ===');
-  if (!WA_API_TOKEN || !WA_PHONE_ID) {
-    console.error('WA_API_TOKEN / WA_PHONE_ID not set — cannot send');
+  console.log('=== Caregiver WhatsApp Reminder (CallMeBot) ===');
+  if (!GITHUB_TOKEN) {
+    console.error('GITHUB_TOKEN not set — cannot read data');
     process.exit(1);
   }
-  console.log(`[MODE] ${WA_FREEFORM ? 'free-form (24h window)' : 'template (' + WA_TEMPLATE + ')'}`);
+  const configuredKeys = Object.entries(CALLMEBOT_KEYS).filter(([, v]) => v).map(([k]) => k);
+  console.log(`[KEYS] 已配置 CallMeBot key: ${configuredKeys.length ? configuredKeys.join(', ') : '（全無）'}`);
 
   const now = new Date();
   const hkNow = new Date(now.getTime() + 8 * 3600000);
@@ -248,20 +239,21 @@ async function main() {
 
   console.log(`[CRON] ${toNotify.length} notifications to send`);
   let sent = 0;
+  let totalTargets = 0;
   for (const item of toNotify) {
     const reminder = item.reminder;
     const targets = reminder.caregiver === 'ALL'
-      ? Object.values(CAREGIVER_PHONES)
-      : [CAREGIVER_PHONES[reminder.caregiver]];
+      ? Object.keys(CAREGIVER_PHONES)
+      : [reminder.caregiver];
     for (const care of targets) {
-      const ok = await sendWhatsApp(care.phone, reminder, item.type);
+      if (!CAREGIVER_PHONES[care]) continue;
+      totalTargets++;
+      const ok = await sendCallMeBot(care, buildCaregiverMsg(reminder, item.type));
       if (ok) sent++;
-      await new Promise(r => setTimeout(r, 800)); // rate-limit friendliness
+      await new Promise(r => setTimeout(r, 3500)); // CallMeBot: 1 msg / 3s per number
     }
   }
-  const totalTargets = toNotify.reduce((acc, it) =>
-    acc + (it.reminder.caregiver === 'ALL' ? Object.keys(CAREGIVER_PHONES).length : 1), 0);
-  console.log(`[WA] Done! Delivered ${sent}/${totalTargets}`);
+  console.log(`[CALLMEBOT] Done! Delivered ${sent}/${totalTargets}`);
   process.exit(0);
 }
 
