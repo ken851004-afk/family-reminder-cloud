@@ -170,6 +170,19 @@
       "repeatDays": [
         5
       ]
+    },
+    {
+      "id": "r1783578101824kw7",
+      "notified": false,
+      "caregiverNotified1d": false,
+      "caregiverNotified3h": false,
+      "name": "港同一面",
+      "date": "2026-09-24",
+      "time": "10:30",
+      "category": "school",
+      "caregiver": "EPPIE",
+      "note": "帶學生證",
+      "repeat": "none"
     }
   ],
   "birthdays": [
