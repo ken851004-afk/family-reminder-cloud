@@ -185,19 +185,6 @@
       "repeat": "none"
     },
     {
-      "name": "名古屋 (第2日/4日)",
-      "date": "2026-07-09",
-      "time": "10:00",
-      "category": "travel",
-      "caregiver": "Rosanna Mok",
-      "note": "",
-      "repeat": "none",
-      "id": "r1783583049228dm2",
-      "notified": false,
-      "caregiverNotified1d": false,
-      "caregiverNotified3h": false
-    },
-    {
       "name": "名古屋 (第3日/4日)",
       "date": "2026-07-10",
       "time": "10:00",
@@ -521,11 +508,25 @@
       "caregiverNotified1d": false,
       "caregiverNotified3h": false,
       "archivedAt": "2026-07-09T07:44:09.228Z"
+    },
+    {
+      "name": "名古屋 (第2日/4日)",
+      "date": "2026-07-09",
+      "time": "10:00",
+      "category": "travel",
+      "caregiver": "Rosanna Mok",
+      "note": "",
+      "repeat": "none",
+      "id": "r1783583049228dm2",
+      "notified": false,
+      "caregiverNotified1d": false,
+      "caregiverNotified3h": false,
+      "archivedAt": "2026-07-09T17:53:50.242Z"
     }
   ],
   "groupNotifications": [],
   "_lastArchived": [
-    "r1783583049228v0p"
+    "r1783583049228dm2"
   ],
   "pushSubscriptions": [
     {
