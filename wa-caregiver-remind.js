@@ -1,19 +1,24 @@
 /**
- * GitHub Actions: 照顧者個人 WhatsApp 提醒
+ * GitHub Actions: 照顧者個人 WhatsApp 提醒 (WhatsApp Business Cloud API)
  * - 提早 1 天提醒（每日 09:00 HKT 發送）
  * - 提早 3 小時提醒（每小時檢查）
- * 
- * 資料來源：GitHub API data.json
- * 發送目標：照顧者個人 WhatsApp（非群組）
+ *
+ * 發送層：Meta Graph API (WhatsApp Business Cloud API)
+ *   - 永遠唔使掃 QR、唔使 baileys session
+ *   - 用永久 access token，set-and-forget
+ *
+ * Env:
+ *   WA_API_TOKEN   Meta 永久 access token (system/user token)
+ *   WA_PHONE_ID    WhatsApp Business 號碼 ID (Meta App > WhatsApp > 號碼)
+ *   WA_TEMPLATE    模板名稱 (預設: family_reminder) — 主動提醒必須用模板
+ *   WA_FREEFORM    設 1 則改用 free-form 文字 (只係 24h 客服窗口內有效，用嚟快速測試)
+ *   GITHUB_TOKEN   GitHub token (讀寫 data.json)
+ *   GITHUB_REPO    ken851004-afk/family-reminder-cloud
  */
 
-const { makeWASocket, useMultiFileAuthState, fetchLatestBaileysVersion } = require('baileys');
-const fs = require('fs');
 const https = require('https');
-const path = require('path');
-const NodeCache = require('node-cache');
 
-// ===== 照顧者電話對照表 =====
+// ===== 照顧者電話對照表 (E.164 without '+') =====
 const CAREGIVER_PHONES = {
   'KEN':         { phone: '85262218999',  name: 'KEN' },
   'EPPIE':       { phone: '85297510047',  name: 'EPPIE（太太）' },
@@ -22,16 +27,18 @@ const CAREGIVER_PHONES = {
   'COFFE':       { phone: '85266713322',  name: 'COFFE' },
   '老豆':        { phone: '85262269100',  name: '老豆' }
 };
-// ===== 群組 =====
-const GROUP_ID = '120363412134951607@g.us'; // 揸揸的家長們
 
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN || process.env.GH_PAT;
-const GITHUB_REPO = process.env.GH_REPO || 'ken851004-afk/family-reminder-cloud';
+const GITHUB_REPO  = process.env.GITHUB_REPO || 'ken851004-afk/family-reminder-cloud';
+const WA_API_TOKEN = process.env.WA_API_TOKEN;
+const WA_PHONE_ID  = process.env.WA_PHONE_ID;
+const WA_TEMPLATE  = process.env.WA_TEMPLATE || 'family_reminder';
+const WA_FREEFORM  = process.env.WA_FREEFORM === '1';
 
 const CAT_ICONS = { school: '🏫', class: '🎨', special: '⭐', summer: '☀️', routine: '📅' };
 const DAY_NAMES = ['日','一','二','三','四','五','六'];
 
-// ===== GitHub API helpers =====
+// ===== GitHub API helpers (keep existing) =====
 function githubApiGet(apiPath) {
   return new Promise((resolve, reject) => {
     const opts = {
@@ -89,16 +96,12 @@ function githubApiPut(apiPath, content, sha, message) {
   });
 }
 
-// ===== Helper functions =====
-function getWeekDay(dateStr) {
-  return DAY_NAMES[new Date(dateStr + 'T00:00:00').getDay()];
-}
-
+// ===== Helpers =====
+function getWeekDay(dateStr) { return DAY_NAMES[new Date(dateStr + 'T00:00:00').getDay()]; }
 function formatDate(dateStr) {
   const d = new Date(dateStr + 'T00:00:00');
   return `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`;
 }
-
 function buildCaregiverMsg(r, type) {
   const icon = CAT_ICONS[r.category] || '📌';
   const prefix = type === '1day' ? '⏰ 提早一天提醒' : '🚨 三小時後提醒';
@@ -107,34 +110,81 @@ function buildCaregiverMsg(r, type) {
   msg += `📅 ${formatDate(r.date)}（星期${getWeekDay(r.date)}）${r.time && r.time !== '00:00' ? ' ' + r.time : ''}\n`;
   if (r.address) msg += `📍 ${r.address}\n`;
   if (r.note) msg += `📝 ${r.note}\n`;
-  
-  // Show "全部人" if caregiver is 'ALL'
-  if (r.caregiver === 'ALL') {
-    msg += `\n👥 照顧者：全部人\n`;
-  } else {
-    msg += `\n👤 照顧者：${r.caregiver}\n`;
-  }
-  
+  if (r.caregiver === 'ALL') msg += `\n👥 照顧者：全部人\n`;
+  else msg += `\n👤 照顧者：${r.caregiver}\n`;
   msg += `🌐 查看全部：https://ken851004-afk.github.io/family-reminder-cloud/`;
   return msg;
 }
 
+// ===== WhatsApp Cloud API send =====
+async function sendWhatsApp(to, r, type) {
+  const url = `https://graph.facebook.com/v19.0/${WA_PHONE_ID}/messages`;
+  const body = WA_FREEFORM
+    ? { messaging_product: 'whatsapp', to, type: 'text', text: { body: buildCaregiverMsg(r, type) } }
+    : {
+        messaging_product: 'whatsapp',
+        to,
+        type: 'template',
+        template: {
+          name: WA_TEMPLATE,
+          language: { code: 'zh_HK' },
+          components: [{
+            type: 'body',
+            parameters: [
+              { type: 'text', text: `${type === '1day' ? '⏰ 提早一天提醒' : '🚨 三小時後提醒'} ${r.name}` },
+              { type: 'text', text: `${formatDate(r.date)} ${r.time && r.time !== '00:00' ? r.time : ''}`.trim() },
+              { type: 'text', text: r.note || '—' },
+            ],
+          }],
+        },
+      };
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 30000);
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${WA_API_TOKEN}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    });
+    const json = await res.json();
+    clearTimeout(timer);
+    if (json.error) {
+      console.error(`[WA] ✗ ${to}: ${json.error.error_subcode || json.error.code} ${json.error.message}`);
+      return false;
+    }
+    console.log(`[WA] ✓ ${to} (${r.name}) [${type}] id=${json.messages?.[0]?.id || 'n/a'}`);
+    return true;
+  } catch (e) {
+    clearTimeout(timer);
+    console.error(`[WA] ✗ ${to}: ${e.message}`);
+    return false;
+  }
+}
+
 // ===== Main =====
 async function main() {
-  console.log('=== Caregiver WhatsApp Reminder ===');
+  console.log('=== Caregiver WhatsApp Reminder (Cloud API) ===');
+  if (!WA_API_TOKEN || !WA_PHONE_ID) {
+    console.error('WA_API_TOKEN / WA_PHONE_ID not set — cannot send');
+    process.exit(1);
+  }
+  console.log(`[MODE] ${WA_FREEFORM ? 'free-form (24h window)' : 'template (' + WA_TEMPLATE + ')'}`);
+
   const now = new Date();
-  const hkNow = new Date(now.getTime() + 8 * 3600000); // HKT
+  const hkNow = new Date(now.getTime() + 8 * 3600000);
   const hkHour = hkNow.getUTCHours();
   const hkDateStr = `${hkNow.getUTCFullYear()}-${String(hkNow.getUTCMonth()+1).padStart(2,'0')}-${String(hkNow.getUTCDate()).padStart(2,'0')}`;
-  
   console.log(`[TIME] HKT: ${hkDateStr} ${String(hkHour).padStart(2,'0')}:${String(hkNow.getUTCMinutes()).padStart(2,'0')}`);
 
-  // 1. Fetch data.json from GitHub
-  console.log('[DATA] Fetching data.json from GitHub...');
   let ghResult;
   try {
     ghResult = await githubApiGet('data.json');
-  } catch(e) {
+  } catch (e) {
     console.error('[DATA] Failed:', e.message);
     process.exit(1);
   }
@@ -143,41 +193,30 @@ async function main() {
   const reminders = data.reminders || [];
   console.log(`[DATA] Loaded ${reminders.length} reminders`);
 
-  // 2. Find reminders that need caregiver notification
   const toNotify = [];
   let dataChanged = false;
 
   for (const r of reminders) {
-    // Skip if no caregiver specified
     if (!r.caregiver) continue;
-    
-    // Skip if caregiver is specified but not in our phone list (and not 'ALL')
     if (r.caregiver !== 'ALL' && !CAREGIVER_PHONES[r.caregiver]) continue;
-    
-    const eventDate = r.date; // YYYY-MM-DD
+
     const eventTime = r.time || '09:00';
-    
-    // Calculate date diff
     const today = new Date(hkDateStr + 'T00:00:00');
-    const eventDay = new Date(eventDate + 'T00:00:00');
+    const eventDay = new Date(r.date + 'T00:00:00');
     const daysUntil = Math.ceil((eventDay - today) / 86400000);
-    
-    // Check 1-day-before: only at 09:00 HKT
+
     if (daysUntil === 1 && hkHour === 9 && !r.caregiverNotified1d) {
       toNotify.push({ reminder: r, type: '1day' });
       r.caregiverNotified1d = true;
       dataChanged = true;
       console.log(`[1DAY] ${r.name} → ${r.caregiver}`);
     }
-    
-    // Check 3-hours-before: event is today, check time
+
     if (daysUntil === 0 && !r.caregiverNotified3h) {
       const [eh, em] = eventTime.split(':').map(Number);
-      const eventHkTime = eh * 60 + em; // minutes from midnight HKT
+      const eventHkTime = eh * 60 + em;
       const nowHkTime = hkHour * 60 + hkNow.getUTCMinutes();
       const diffMin = eventHkTime - nowHkTime;
-      
-      // Send if event is 2.5-3.5 hours away (catch once within the hourly window)
       if (diffMin >= 150 && diffMin <= 210) {
         toNotify.push({ reminder: r, type: '3hour' });
         r.caregiverNotified3h = true;
@@ -185,8 +224,7 @@ async function main() {
         console.log(`[3HOUR] ${r.name} (${eventTime}) → ${r.caregiver}`);
       }
     }
-    
-    // Reset flags if event has passed
+
     if (daysUntil < 0 && (r.caregiverNotified1d || r.caregiverNotified3h)) {
       r.caregiverNotified1d = false;
       r.caregiverNotified3h = false;
@@ -194,12 +232,11 @@ async function main() {
     }
   }
 
-  // Save updated flags to GitHub
   if (dataChanged) {
     try {
       await githubApiPut('data.json', data, sha, 'Update caregiver notification flags');
       console.log('[DATA] Updated notification flags on GitHub');
-    } catch(e) {
+    } catch (e) {
       console.error('[DATA] Failed to update flags:', e.message);
     }
   }
@@ -210,116 +247,25 @@ async function main() {
   }
 
   console.log(`[CRON] ${toNotify.length} notifications to send`);
-
-  // 3. Decode WhatsApp creds
-  if (!process.env.WA_CREDS_B64) {
-    console.error('WA_CREDS_B64 not set');
-    process.exit(1);
+  let sent = 0;
+  for (const item of toNotify) {
+    const reminder = item.reminder;
+    const targets = reminder.caregiver === 'ALL'
+      ? Object.values(CAREGIVER_PHONES)
+      : [CAREGIVER_PHONES[reminder.caregiver]];
+    for (const care of targets) {
+      const ok = await sendWhatsApp(care.phone, reminder, item.type);
+      if (ok) sent++;
+      await new Promise(r => setTimeout(r, 800)); // rate-limit friendliness
+    }
   }
-  const credsJson = Buffer.from(process.env.WA_CREDS_B64, 'base64').toString('utf8');
-  const SESSION_DIR = '/tmp/wa-session-caregiver';
-  if (!fs.existsSync(SESSION_DIR)) fs.mkdirSync(SESSION_DIR, { recursive: true });
-  fs.writeFileSync(path.join(SESSION_DIR, 'creds.json'), credsJson);
-  console.log('[WA] creds.json written');
-
-  // 4. Connect & send
-  const { state, saveCreds } = await useMultiFileAuthState(SESSION_DIR);
-  const { version } = await fetchLatestBaileysVersion();
-  const msgRetryCounter = new NodeCache();
-
-  return new Promise((resolve, reject) => {
-    const sock = makeWASocket({
-      version,
-      auth: state,
-      printQRInTerminal: false,
-      markOnlineOnConnect: false,
-      logger: require('pino')({ level: 'silent' }),
-      msgRetryCounterCache: msgRetryCounter,
-      browser: ['Caregiver Reminder', 'Chrome', '1.0.0']
-    });
-
-    let sent = 0;
-    const target = toNotify.length;
-    
-    const timeout = setTimeout(() => {
-      console.error(`[WA] Timeout: sent ${sent}/${target}`);
-      sock.end();
-      resolve();
-    }, 120000);
-
-    sock.ev.on('creds.update', () => saveCreds());
-
-    sock.ev.on('connection.update', async (update) => {
-      const { connection, lastDisconnect } = update;
-
-      if (connection === 'open') {
-        console.log('[WA] Connected! Sending notifications...');
-        
-        for (const item of toNotify) {
-          const reminder = item.reminder;
-          
-          // If caregiver is 'ALL', send to all caregivers
-          if (reminder.caregiver === 'ALL') {
-            console.log(`[ALL] Sending to all caregivers: ${reminder.name}`);
-            
-            for (const [careName, careInfo] of Object.entries(CAREGIVER_PHONES)) {
-              const jid = careInfo.phone + '@s.whatsapp.net';
-              const msg = buildCaregiverMsg(reminder, item.type);
-              
-              try {
-                await sock.sendMessage(jid, { text: msg });
-                console.log(`[SENT-ALL] ${reminder.name} → ${careInfo.name} (${careInfo.phone}) [${item.type}]`);
-                sent++;
-                // Small delay between messages
-                await new Promise(r => setTimeout(r, 1500));
-              } catch(e) {
-                console.error(`[FAIL-ALL] ${reminder.name} → ${careInfo.name}: ${e.message}`);
-              }
-            }
-          } else {
-            // Send to single caregiver (original logic)
-            const care = CAREGIVER_PHONES[reminder.caregiver];
-            if (!care) { console.log(`[SKIP] No phone for ${reminder.caregiver}`); continue; }
-            
-            const jid = care.phone + '@s.whatsapp.net';
-            const msg = buildCaregiverMsg(reminder, item.type);
-            
-            try {
-              await sock.sendMessage(jid, { text: msg });
-              console.log(`[SENT] ${reminder.name} → ${care.name} (${care.phone}) [${item.type}]`);
-              sent++;
-              // Small delay between messages
-              await new Promise(r => setTimeout(r, 1500));
-            } catch(e) {
-              console.error(`[FAIL] ${reminder.name} → ${care.name}: ${e.message}`);
-            }
-          }
-        }
-        
-        console.log(`[WA] Done! Sent ${sent}/${target}`);
-        clearTimeout(timeout);
-        setTimeout(() => { sock.end(); resolve(); }, 2000);
-      }
-
-      if (connection === 'close') {
-        const code = lastDisconnect?.error?.output?.statusCode;
-        console.log(`[WA] Closed (code: ${code})`);
-        if (sent === 0) {
-          clearTimeout(timeout);
-          reject(new Error(`Connection closed: ${code}`));
-        } else {
-          clearTimeout(timeout);
-          resolve();
-        }
-      }
-    });
-  });
+  const totalTargets = toNotify.reduce((acc, it) =>
+    acc + (it.reminder.caregiver === 'ALL' ? Object.keys(CAREGIVER_PHONES).length : 1), 0);
+  console.log(`[WA] Done! Delivered ${sent}/${totalTargets}`);
+  process.exit(0);
 }
 
-main().then(() => {
-  console.log('=== Done ===');
-  process.exit(0);
-}).catch(err => {
+main().then(() => process.exit(0)).catch(err => {
   console.error('Error:', err.message);
   process.exit(1);
 });

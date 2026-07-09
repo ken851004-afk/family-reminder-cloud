@@ -1,17 +1,14 @@
-name: Caregiver WhatsApp Reminder (Cloud)
+name: Caregiver WhatsApp Reminder (Cloud API)
 
 on:
-  push:
-    branches: [master]
   schedule:
-    - cron: '0 * * * *'   # every hour, 24/7 — timer may be disabled by GitHub; see repository_dispatch fallback
+    - cron: '0 * * * *'   # every hour, 24/7 — GitHub native timer may be dead; see repository_dispatch fallback
   workflow_dispatch:
   repository_dispatch:
     types: [caregiver-tick]
 
 permissions:
-  contents: read
-  actions: write   # required so this run can re-arm the next run via gh workflow run
+  contents: write
 
 jobs:
   send-reminder:
@@ -21,17 +18,14 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '22'
-      - name: Install dependencies
-        run: npm install baileys qrcode node-cache pino
-      - name: Send caregiver reminders
+          node-version: '22'   # Node 22 has global fetch — no baileys needed
+      - name: Send caregiver reminders (WhatsApp Cloud API)
         env:
-          WA_CREDS_B64: ${{ secrets.WA_CREDS_B64 }}
+          WA_API_TOKEN: ${{ secrets.WA_API_TOKEN }}
+          WA_PHONE_ID:  ${{ secrets.WA_PHONE_ID }}
+          WA_TEMPLATE:  ${{ secrets.WA_TEMPLATE }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: node wa-caregiver-remind.js
-      # NOTE: No self-chain re-arm here on purpose.
-      # A self-perpetuating chain for this hourly job would keep a runner
-      # permanently busy (~43k min/month) AND thrash the WhatsApp (baileys)
-      # session every ~45s. Instead this workflow is driven 24/7 by the
-      # external hourly triggers (WorkBuddy automation "Family Reminder Backup
-      # Trigger" + optional Google Apps Script watchdog), which cost ~1k min/month.
+      # Driven 24/7 by external hourly triggers (WorkBuddy automation +
+      # optional Google Apps Script watchdog) via repository_dispatch
+      # caregiver-tick. No self-chain (avoids burning minutes + session churn).
