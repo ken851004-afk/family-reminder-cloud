@@ -2334,16 +2334,9 @@ function initPushUI() {
 }
 
 function fetchPushStatus() {
-  fetch(PUSH_SERVER + '/status')
-    .then(function(r) { return r.json(); })
-    .then(function(d) {
-      var statEl = document.getElementById('stat-push-count');
-      if (statEl) statEl.textContent = d.subscribers + ' 部裝置在線';
-    })
-    .catch(function() {
-      var statEl = document.getElementById('stat-push-count');
-      if (statEl) statEl.textContent = '無法連接（請確認 push server 運行中）';
-    });
+  var statEl = document.getElementById('stat-push-count');
+  if (!statEl) return;
+  statEl.textContent = _pushSub ? '本機已訂閱，GitHub Actions 自動推送' : '尚未訂閱';
 }
 
 function savePushServerUrl() {
@@ -2386,15 +2379,47 @@ function updatePushStats() {
   }
 }
 
-// Get VAPID public key from server
+// VAPID key pair (must match GitHub Actions secret VAPID_PRIVATE_KEY)
+var VAPID_PUBLIC_KEY = 'BGcuGDYkHE7GhGUBqIvlit3f1PGMbYjrSuBYuzqXyiDw1P3zVeMDd04IORY3oBtuHli9-TCVGguX7m_xinxzHBw';
+
+// Get VAPID public key (hardcoded — no local server needed)
 function getVapidKey() {
-  return fetch(PUSH_SERVER + '/vapid-public-key')
-    .then(function(r) { return r.json(); })
-    .then(function(d) { return d.publicKey; })
-    .catch(function() {
-      // Fallback to hardcoded key
-      return 'BGcuGDYkHE7GhGUBqIvlit3f1PGMbYjrSuBYuzqXyiDw1P3zVeMDd04IORY3oBtuHli9-TCVGguX7m_xinxzHBw';
+  return Promise.resolve(VAPID_PUBLIC_KEY);
+}
+
+// Store / remove push subscription in data.json.pushSubscriptions via GitHub API
+// so the 24/7 GitHub Actions sender can deliver to ANY device (no computer on).
+async function updatePushSubscription(sub, remove) {
+  var token = getGHToken();
+  if (!token) throw new Error('未設定 GitHub Token');
+  for (var attempt = 0; attempt < 3; attempt++) {
+    var getResp = await fetch('https://api.github.com/repos/ken851004-afk/family-reminder-cloud/contents/data.json', {
+      headers: { 'Authorization': 'Bearer ' + token, 'Accept': 'application/vnd.github.v3+json' }
     });
+    if (!getResp.ok) throw new Error('GitHub GET ' + getResp.status);
+    var getData = await getResp.json();
+    var sha = getData.sha;
+    var raw = atob(getData.content.replace(/\s/g, ''));
+    var bytes = new Uint8Array(raw.length);
+    for (var i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i);
+    var serverData = JSON.parse(new TextDecoder('utf-8').decode(bytes));
+    if (!serverData.pushSubscriptions) serverData.pushSubscriptions = [];
+    if (remove) {
+      serverData.pushSubscriptions = serverData.pushSubscriptions.filter(function(s) { return s.endpoint !== sub.endpoint; });
+    } else {
+      var exists = serverData.pushSubscriptions.some(function(s) { return s.endpoint === sub.endpoint; });
+      if (!exists) serverData.pushSubscriptions.push(sub);
+    }
+    var putResp = await fetch('https://api.github.com/repos/ken851004-afk/family-reminder-cloud/contents/data.json', {
+      method: 'PUT',
+      headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json', 'Accept': 'application/vnd.github.v3+json' },
+      body: JSON.stringify({ message: (remove ? 'web-push: unsubscribe' : 'web-push: subscribe'), content: utf8ToBase64(JSON.stringify(serverData, null, 2)), sha: sha })
+    });
+    if (putResp.ok) return serverData.pushSubscriptions.length;
+    if (putResp.status === 409) continue; // SHA conflict, retry
+    throw new Error('GitHub PUT ' + putResp.status);
+  }
+  throw new Error('GitHub PUT 衝突，重試失敗');
 }
 
 // Subscribe to push
@@ -2412,23 +2437,16 @@ function subscribePush() {
     }).then(function(sub) {
       _pushSub = sub;
       updateBellUI();
-
-      // Send subscription to server
-      return fetch(PUSH_SERVER + '/subscribe', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(sub)
-      });
-    }).then(function(r) { return r.json(); })
-    .then(function(d) {
-      toast('通知已開啟！共 ' + d.count + ' 部裝置');
-    })
-    .catch(function(e) {
+      // Persist subscription to data.json (GitHub Actions delivers 24/7)
+      return updatePushSubscription(sub, false);
+    }).then(function(count) {
+      toast('通知已開啟！共 ' + count + ' 部裝置訂閱');
+    }).catch(function(e) {
       console.log('Subscribe failed:', e);
       _pushSub = null;
       updateBellUI();
-      if (e.message && e.message.includes('fetch')) {
-        toast('無法連接 Push Server！請在設定頁輸入電腦 LAN IP');
+      if (e.message && e.message.indexOf('Token') >= 0) {
+        toast('請先喺設定頁輸入 GitHub Token');
       } else {
         toast('通知開啟失敗：' + (e.message || '未知錯誤'));
       }
@@ -2453,18 +2471,11 @@ function subscribePush() {
 // Unsubscribe
 function unsubscribePush() {
   if (!_pushSub) { toast('尚未訂閱通知'); return; }
-  var endpoint = _pushSub.endpoint;
-
-  _pushSub.unsubscribe().then(function() {
+  var sub = _pushSub;
+  sub.unsubscribe().then(function() {
     _pushSub = null;
     updateBellUI();
-
-    // Notify server
-    return fetch(PUSH_SERVER + '/unsubscribe', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ endpoint: endpoint })
-    });
+    return updatePushSubscription(sub, true);
   }).then(function() {
     toast('通知已關閉');
   }).catch(function(e) {
