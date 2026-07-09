@@ -793,9 +793,14 @@ function renderCalendar() {
     if (r.endDate) eventDates[r.endDate] = true;
   });
   (DATA.birthdays || []).forEach(function(b) {
-    var y = calYear;
+    if (!b.date) return;
     var parts = b.date.split('-');
-    var bd = y + '-' + parts[1] + '-' + parts[2];
+    var bd;
+    if (parts.length >= 3) {
+      bd = parts[0] + '-' + parts[1] + '-' + parts[2];
+    } else {
+      bd = calYear + '-' + parts[0] + '-' + parts[1];
+    }
     eventDates[bd] = true;
   });
   var today = new Date();
