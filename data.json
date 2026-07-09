@@ -426,5 +426,13 @@
   "_lastArchived": [
     "r1783425391822ao0"
   ],
-  "pushSubscriptions": []
+  "pushSubscriptions": [
+    {
+      "endpoint": "https://web.push.apple.com/QK1VQr8bAP7CQaFhQnsiau_Wu-gLSAelqtSaF6mnidlB0DowfOwRDt41f0Xf90LYJimvHuXmn6vE5SuXQDx5BrK7vUqnl-agidr5jf1w1sqa-gDXekeOWLwYhkUWCxwU_tPGlHG10-a5Ji2ejhb2FooTflWAL2WG2rU9TXawW00",
+      "keys": {
+        "p256dh": "BMScytvXE6HEb_xX6YnsB1UcShj51iy4teMNYjM2nnt4BWKMyv1THlQPFR1KGNQD6hF0Q4MxgmFUVIgbTgen15Q",
+        "auth": "FpWd_KB7AU3Ju-6OtiMyxA"
+      }
+    }
+  ]
 }
