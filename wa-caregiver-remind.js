@@ -198,8 +198,6 @@ async function main() {
 
     if (daysUntil === 1 && hkHour === 9 && !r.caregiverNotified1d) {
       toNotify.push({ reminder: r, type: '1day' });
-      r.caregiverNotified1d = true;
-      dataChanged = true;
       console.log(`[1DAY] ${r.name} → ${r.caregiver}`);
     }
 
@@ -210,12 +208,11 @@ async function main() {
       const diffMin = eventHkTime - nowHkTime;
       if (diffMin >= 150 && diffMin <= 210) {
         toNotify.push({ reminder: r, type: '3hour' });
-        r.caregiverNotified3h = true;
-        dataChanged = true;
         console.log(`[3HOUR] ${r.name} (${eventTime}) → ${r.caregiver}`);
       }
     }
 
+    // 過期提醒：重置 flag，等刪除或下次
     if (daysUntil < 0 && (r.caregiverNotified1d || r.caregiverNotified3h)) {
       r.caregiverNotified1d = false;
       r.caregiverNotified3h = false;
@@ -223,7 +220,7 @@ async function main() {
     }
   }
 
-  if (dataChanged) {
+  async function flushFlags() {
     try {
       await githubApiPut('data.json', data, sha, 'Update caregiver notification flags');
       console.log('[DATA] Updated notification flags on GitHub');
@@ -233,6 +230,7 @@ async function main() {
   }
 
   if (toNotify.length === 0) {
+    if (dataChanged) await flushFlags();
     console.log('[CRON] No caregiver notifications needed. Exiting.');
     process.exit(0);
   }
@@ -245,14 +243,25 @@ async function main() {
     const targets = reminder.caregiver === 'ALL'
       ? Object.keys(CAREGIVER_PHONES)
       : [reminder.caregiver];
+    let itemSent = 0, itemTotal = 0;
     for (const care of targets) {
       if (!CAREGIVER_PHONES[care]) continue;
-      totalTargets++;
+      itemTotal++; totalTargets++;
       const ok = await sendCallMeBot(care, buildCaregiverMsg(reminder, item.type));
-      if (ok) sent++;
+      if (ok) { sent++; itemSent++; }
       await new Promise(r => setTimeout(r, 3500)); // CallMeBot: 1 msg / 3s per number
     }
+    // 全部目標發送成功先標記 flag，避免「標咗但未送到」永久唔重試
+    if (itemTotal > 0 && itemSent === itemTotal) {
+      if (item.type === '1day') reminder.caregiverNotified1d = true;
+      else reminder.caregiverNotified3h = true;
+      dataChanged = true;
+    } else {
+      console.log(`[WARN] ${reminder.name} 部分/全部發送失敗，留待下次重試`);
+    }
   }
+
+  if (dataChanged) await flushFlags();
   console.log(`[CALLMEBOT] Done! Delivered ${sent}/${totalTargets}`);
   process.exit(0);
 }

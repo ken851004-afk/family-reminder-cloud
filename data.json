@@ -154,18 +154,6 @@
       "caregiver": "KEN",
       "note": "",
       "repeat": "none"
-    },
-    {
-      "id": "temp-proof-ken-1783571741550",
-      "name": "【PROOF TEST】KEN 通知測試",
-      "category": "special",
-      "date": "2026-07-09",
-      "time": "15:35",
-      "note": "系統 live 證明測試 — 收到即代表 WhatsApp 提醒通",
-      "address": "",
-      "caregiver": "KEN",
-      "caregiverNotified1d": false,
-      "caregiverNotified3h": false
     }
   ],
   "birthdays": [
