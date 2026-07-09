@@ -222,6 +222,19 @@
       "notified": false,
       "caregiverNotified1d": false,
       "caregiverNotified3h": false
+    },
+    {
+      "id": "r1783583145890fck",
+      "notified": false,
+      "caregiverNotified1d": false,
+      "caregiverNotified3h": false,
+      "name": "Leospk",
+      "date": "2026-07-19",
+      "time": "11:00",
+      "category": "activity",
+      "caregiver": "KEN",
+      "note": "",
+      "repeat": "none"
     }
   ],
   "birthdays": [
