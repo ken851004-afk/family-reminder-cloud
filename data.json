@@ -274,7 +274,13 @@
       "note": ""
     }
   ],
-  "pendingMessages": [],
+  "pendingMessages": [
+    {
+      "phone": "85262218999",
+      "text": "Hi",
+      "at": "2026-07-09T07:46:23.503Z"
+    }
+  ],
   "members": [
     {
       "id": "ken",
