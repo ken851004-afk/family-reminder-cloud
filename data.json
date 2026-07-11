@@ -185,19 +185,6 @@
       "repeat": "none"
     },
     {
-      "name": "名古屋 (第3日/4日)",
-      "date": "2026-07-10",
-      "time": "10:00",
-      "category": "travel",
-      "caregiver": "Rosanna Mok",
-      "note": "",
-      "repeat": "none",
-      "id": "r1783583049228a7i",
-      "notified": false,
-      "caregiverNotified1d": false,
-      "caregiverNotified3h": false
-    },
-    {
       "name": "名古屋 (第4日/4日)",
       "date": "2026-07-11",
       "time": "10:00",
@@ -221,19 +208,6 @@
       "category": "activity",
       "caregiver": "KEN",
       "note": "",
-      "repeat": "none"
-    },
-    {
-      "id": "r178361974262353l",
-      "notified": false,
-      "caregiverNotified1d": false,
-      "caregiverNotified3h": false,
-      "name": "覆大眾email",
-      "date": "2026-07-10",
-      "time": "09:30",
-      "category": "work",
-      "caregiver": "KEN",
-      "note": "處理erkcia iff\n交Hugo iff\n影合約\n問媽咪有冇信\n糧單",
       "repeat": "none"
     }
   ],
@@ -535,11 +509,40 @@
       "caregiverNotified1d": false,
       "caregiverNotified3h": false,
       "archivedAt": "2026-07-09T17:53:50.242Z"
+    },
+    {
+      "name": "名古屋 (第3日/4日)",
+      "date": "2026-07-10",
+      "time": "10:00",
+      "category": "travel",
+      "caregiver": "Rosanna Mok",
+      "note": "",
+      "repeat": "none",
+      "id": "r1783583049228a7i",
+      "notified": false,
+      "caregiverNotified1d": false,
+      "caregiverNotified3h": false,
+      "archivedAt": "2026-07-11T01:55:26.156Z"
+    },
+    {
+      "id": "r178361974262353l",
+      "notified": false,
+      "caregiverNotified1d": false,
+      "caregiverNotified3h": false,
+      "name": "覆大眾email",
+      "date": "2026-07-10",
+      "time": "09:30",
+      "category": "work",
+      "caregiver": "KEN",
+      "note": "處理erkcia iff\n交Hugo iff\n影合約\n問媽咪有冇信\n糧單",
+      "repeat": "none",
+      "archivedAt": "2026-07-11T01:55:26.156Z"
     }
   ],
   "groupNotifications": [],
   "_lastArchived": [
-    "r1783583049228dm2"
+    "r1783583049228a7i",
+    "r178361974262353l"
   ],
   "pushSubscriptions": [
     {
