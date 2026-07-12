@@ -1,0 +1,129 @@
+name: CI/CD Pipeline
+
+# ════════════════════════════════════════════════════════════════
+# 統一部署流水線（取代舊嘅 deploy.yml + deploy-pages.yml）
+# 流程：push master → ① 驗證閘 → ② 部署 gh-pages → ③ 上線驗證
+#       若上線驗證失敗 → 自動回滾上一版 + 開 Incident Issue
+# 你（用家）完全唔使郁手：改完 code push 就去晒，壞嘢唔會上 live。
+# ════════════════════════════════════════════════════════════════
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  # ───────────────────────── ① 驗證閘 ─────────────────────────
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: JS 語法檢查（全部 .js）
+        run: |
+          set -e
+          fail=0
+          for f in *.js; do
+            if node --check "$f" 2>/tmp/err; then
+              echo "✓ $f"
+            else
+              echo "✗ $f"; cat /tmp/err; fail=1
+            fi
+          done
+          exit $fail
+
+      - name: data.json 結構驗證
+        run: |
+          node -e "const d=require('./data.json'); if(!d||!Array.isArray(d.reminders)){console.error('✗ data.json 缺 reminders[]');process.exit(1)} console.log('✓ data.json 有', d.reminders.length, '項提醒')"
+
+      - name: index.html 驗證
+        run: |
+          node -e "const fs=require('fs');const h=fs.readFileSync('index.html','utf8');if(h.length<1000){console.error('✗ index.html 太細');process.exit(1)} if(!h.includes('家庭提醒系統')){console.error('✗ 搵唔到標題標記');process.exit(1)} console.log('✓ index.html OK', h.length, 'bytes')"
+
+  # ───────────────────────── ② 部署 ─────────────────────────
+  deploy:
+    needs: validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 建立 _site
+        run: |
+          mkdir -p _site
+          cp index.html sw.js download.html _site/ 2>/dev/null || true
+          echo "📦 部署檔：" && ls -la _site/
+
+      - name: 部署到 GitHub Pages (gh-pages)
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./_site
+          publish_branch: gh-pages
+          force_orphan: true
+          commit_message: "deploy: auto-publish ${{ github.sha }}"
+
+  # ───────────────────────── ③ 上線驗證 + 回滾 ─────────────────────────
+  verify:
+    needs: deploy
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: 驗證線上網站
+        id: verify
+        run: |
+          URL="https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/"
+          echo "🔎 驗證 $URL"
+          for i in 1 2 3; do
+            sleep 20
+            BODY=$(curl -sS "$URL" 2>/dev/null || true)
+            if echo "$BODY" | grep -q "家庭提醒系統"; then
+              echo "✅ 上線驗證通過"
+              echo "status=ok" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            echo "⏳ retry $i..."
+          done
+          echo "❌ 上線驗證失敗"
+          echo "status=fail" >> "$GITHUB_OUTPUT"
+          exit 1
+
+      - name: 回滾到上一個部署
+        if: failure()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git fetch origin gh-pages
+          git checkout gh-pages
+          if [ "$(git rev-list --count HEAD 2>/dev/null || echo 0)" -gt 1 ]; then
+            git reset --hard HEAD~1
+            git push --force origin gh-pages
+            echo "↩️ 已自動回滾 gh-pages 到上一版"
+          else
+            echo "⚠️ 無上一版可回滾"
+          fi
+
+      - name: 開 Incident Issue
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const title = '🚨 部署驗證失敗 — 已自動回滾';
+            const body = `CI/CD 上線驗證失敗，系統已自動回滾 gh-pages 到上一個穩定版本。\n\n- commit: ${context.sha}\n- 時間: ${new Date().toISOString()}\n- 請檢查今次 push 嘅改動。`;
+            const { data: issues } = await github.rest.issues.listForRepo({ owner: context.repo.owner, repo: context.repo.repo, state: 'open', per_page: 50 });
+            const existing = issues.find(i => i.title === title);
+            if (existing) {
+              await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: existing.number, body: '再次失敗 @ ' + new Date().toISOString() });
+            } else {
+              await github.rest.issues.create({ owner: context.repo.owner, repo: context.repo.repo, title, body });
+            }

@@ -1,0 +1,48 @@
+name: Health Monitor
+
+# ════════════════════════════════════════════════════════════════
+# 健康監控 + 自動報警
+# 每 15 分鐘探測公開網站（GitHub Pages）是否存活。
+# 唔在線 → 自動開 / 追加 GitHub Issue 報警（你喺手機都收到通知）。
+# 註：本地 WhatsApp 服務依賴你部機，雲端探唔到；
+#     請配合 reminder-watchdog.ps1 做本地自癒 + wacli 通知。
+# ════════════════════════════════════════════════════════════════
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'   # 每 15 分鐘
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: 探測網站
+        id: check
+        run: |
+          URL="https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/"
+          CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 20 "$URL" || echo "000")
+          echo "http=$CODE" >> "$GITHUB_OUTPUT"
+          echo "🔎 $URL → HTTP $CODE"
+
+      - name: 異常報警
+        if: steps.check.outputs.http != '200'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const title = '⚠️ Family Reminder 網站異常';
+            const body = `健康監控探測失敗：網站回應碼 ${process.env.HTTP}（${new Date().toISOString()}）。\n\n請檢查：\n1. GitHub Pages 是否仍在生效（Settings → Pages）\n2. 最近一次 CI/CD 部署是否成功\n3. 如係本地服務問題，請睇 reminder-watchdog 日誌`;
+            const { data: issues } = await github.rest.issues.listForRepo({ owner: context.repo.owner, repo: context.repo.repo, state: 'open', per_page: 100 });
+            const existing = issues.find(i => i.title === title);
+            if (existing) {
+              await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: existing.number, body: '仍有異常 @ ' + new Date().toISOString() });
+            } else {
+              await github.rest.issues.create({ owner: context.repo.owner, repo: context.repo.repo, title, body });
+            }
+        env:
+          HTTP: ${{ steps.check.outputs.http }}

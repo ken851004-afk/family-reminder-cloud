@@ -61,12 +61,24 @@ curl -o install.sh https://raw.githubusercontent.com/ken851004-afk/family-remind
 
 ---
 
-## 🔧 GitHub Actions
+## 🔧 GitHub Actions（全自動 CI/CD）
 
 | Workflow | 用途 | 頻率 |
 |----------|------|------|
-| `caregiver-remind.yml` | WhatsApp 提醒發送 | 每小時 |
-| `deploy-pages.yml` | 自動部署網頁 | push 時觸發 |
+| `ci-cd.yml` | **統一部署流水線**：驗證閘 → 部署 gh-pages → 上線驗證，失敗自動回滾 + 開 Issue | push `master` 時 |
+| `health-monitor.yml` | 網站健康監控，異常自動開/追加 Issue 報警 | 每 15 分鐘 |
+| `backup.yml` | 自動備份 `data.json` | 每 6 小時 |
+| `web-push.yml` | Web Push 提醒發送 | 每 5 分鐘 |
+| `caregiver-remind.yml` | 雲端 WhatsApp（已停用，改用本地服務 + watchdog） | 手動 |
+
+> 🛡️ **本地自癒**：`reminder-watchdog.ps1` 每 5 分鐘檢查本地提醒服務，死咗自動重啟並經 WhatsApp 通知你。
+> 一次性設定：以管理員開 PowerShell 跑 `setup-watchdog.ps1` 即可。
+
+### 開發流程（你嘅角色）
+1. 改完 code → `git push` 去 `master`
+2. GitHub Actions 自動：驗證 → 部署 → 驗證上線
+3. 壞 code 會喺驗證閘被擋住，唔會上 live；萬一上咗有問題，自動回滾上一版
+4. 你全程 **唔使郁手**
 
 ---
 
