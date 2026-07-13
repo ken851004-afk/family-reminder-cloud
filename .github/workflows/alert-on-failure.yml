@@ -1,0 +1,48 @@
+name: Alert on CI/CD Failure
+
+# ════════════════════════════════════════════════════════════════
+# CI/CD Pipeline 失敗時自動報警：開 / 追加 GitHub Issue + 嘗試 WhatsApp。
+# 當 ci-cd.yml 跑完且 conclusion=failure 觸發。
+# 註：WhatsApp 經 monitor/notify-failure.js（wacli）發送，
+#     雲端 runner 無 wacli → best-effort，失敗唔阻擋開 Issue。
+# ════════════════════════════════════════════════════════════════
+
+on:
+  workflow_run:
+    workflows: ["CI/CD Pipeline"]
+    types: [completed]
+
+permissions:
+  actions: read
+  issues: write
+
+jobs:
+  alert:
+    if: github.event.workflow_run.conclusion == 'failure'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout（拎 monitor/ 腳本）
+        uses: actions/checkout@v4
+
+      - name: 開 / 追加 GitHub Issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const runId = context.payload.workflow_run.id;
+            const branch = context.payload.workflow_run.head_branch;
+            const sha = context.payload.workflow_run.head_sha;
+            const title = '🚨 CI/CD 部署失敗 — 需要處理';
+            const body = `CI/CD Pipeline 執行失敗（run #${runId}）。\n\n- 分支: ${branch}\n- 提交: ${sha}\n- 時間: ${new Date().toISOString()}\n\n請檢查今次 push 內容或 Actions 日誌。`;
+            const { data: issues } = await github.rest.issues.listForRepo({ owner: context.repo.owner, repo: context.repo.repo, state: 'open', per_page: 100 });
+            const existing = issues.find(i => i.title === title);
+            if (existing) {
+              await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: existing.number, body: '再次失敗 @ ' + new Date().toISOString() });
+            } else {
+              await github.rest.issues.create({ owner: context.repo.owner, repo: context.repo.repo, title, body });
+            }
+
+      - name: 嘗試 WhatsApp 報警（best-effort）
+        continue-on-error: true
+        run: |
+          node monitor/notify-failure.js --message "🚨 家庭提醒 CI/CD 部署失敗，請檢查 GitHub Actions。" || echo "⚠️ WhatsApp 報警失敗（雲端 runner 無 wacli）"

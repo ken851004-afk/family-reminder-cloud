@@ -29,17 +29,17 @@ jobs:
         with:
           node-version: '22'
 
-      - name: JS 語法檢查（全部 .js）
+      - name: JS 語法檢查（全部 .js，排除 node_modules/backups）
         run: |
           set -e
           fail=0
-          for f in *.js; do
+          while IFS= read -r f; do
             if node --check "$f" 2>/tmp/err; then
               echo "✓ $f"
             else
               echo "✗ $f"; cat /tmp/err; fail=1
             fi
-          done
+          done < <(find . -name '*.js' -not -path './node_modules/*' -not -path './backups/*' -not -path './.git/*')
           exit $fail
 
       - name: data.json 結構驗證
@@ -58,11 +58,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: 建立 _site
+      - name: 建立 _site（含 assets/ 資源）
         run: |
           mkdir -p _site
-          cp index.html sw.js download.html _site/ 2>/dev/null || true
-          echo "📦 部署檔：" && ls -la _site/
+          for f in index.html sw.js download.html manifest.json robots.txt; do
+            [ -f "$f" ] && cp "$f" _site/ || true
+          done
+          # 複製子目錄資源（CSS / JS / 圖片等），否則美化後嘅 assets/ 唔會上線
+          [ -d assets ] && cp -r assets _site/ || true
+          [ -d js ] && cp -r js _site/ || true
+          echo "📦 部署檔：" && ls -R _site/ | head -40
 
       - name: 部署到 GitHub Pages (gh-pages)
         uses: peaceiris/actions-gh-pages@v4

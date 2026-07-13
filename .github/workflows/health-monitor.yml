@@ -1,11 +1,14 @@
 name: Health Monitor
 
 # ════════════════════════════════════════════════════════════════
-# 健康監控 + 自動報警
-# 每 15 分鐘探測公開網站（GitHub Pages）是否存活。
-# 唔在線 → 自動開 / 追加 GitHub Issue 報警（你喺手機都收到通知）。
-# 註：本地 WhatsApp 服務依賴你部機，雲端探唔到；
-#     請配合 reminder-watchdog.ps1 做本地自癒 + wacli 通知。
+# 健康監控 + 自動報警（雲端探測，每 15 分鐘）
+# 探測：
+#   (a) 線上網站 HTTP 200 且 HTML 含「家庭提醒系統」
+#   (b) data.json raw URL HTTP 200
+#   (c) wacli 認證（best-effort，雲端 runner 無 wacli 會跳過）
+# 任何失敗 → 開 / 追加 GitHub Issue（可靠）+ 嘗試 WhatsApp 報警（best-effort）。
+# 註：本地服務（localhost:3747 / WhatsApp）雲端探唔到，
+#     由 monitor/health-check.js + reminder-watchdog.ps1 喺你部機自癒 + 報警。
 # ════════════════════════════════════════════════════════════════
 
 on:
@@ -22,21 +25,73 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - name: 探測網站
-        id: check
+      - name: Checkout（拎 monitor/ 腳本）
+        uses: actions/checkout@v4
+
+      - name: (a) 探測網站 + 標題
+        id: site
         run: |
           URL="https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/"
-          CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 20 "$URL" || echo "000")
-          echo "http=$CODE" >> "$GITHUB_OUTPUT"
-          echo "🔎 $URL → HTTP $CODE"
+          CODE=$(curl -s -o /tmp/site.html -w "%{http_code}" --max-time 20 "$URL" || echo "000")
+          echo "code=$CODE" >> "$GITHUB_OUTPUT"
+          if [ "$CODE" = "200" ] && grep -q "家庭提醒系統" /tmp/site.html; then
+            echo "ok=1" >> "$GITHUB_OUTPUT"
+          else
+            echo "ok=0" >> "$GITHUB_OUTPUT"
+          fi
+          echo "🔎 網站 $URL → HTTP $CODE"
 
-      - name: 異常報警
-        if: steps.check.outputs.http != '200'
+      - name: (b) 探測 data.json raw
+        id: data
+        run: |
+          URL="https://raw.githubusercontent.com/${{ github.repository }}/master/data.json"
+          CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 20 "$URL" || echo "000")
+          echo "code=$CODE" >> "$GITHUB_OUTPUT"
+          echo "🔎 data.json → HTTP $CODE"
+
+      - name: (c) wacli 認證檢查（best-effort，雲端無 wacli 會跳過）
+        id: wa
+        continue-on-error: true
+        run: |
+          if command -v wacli >/dev/null 2>&1; then
+            OUT=$(wacli doctor 2>&1 || true)
+            echo "$OUT"
+            if echo "$OUT" | grep -qi "AUTHENTICATED"; then
+              echo "ok=1" >> "$GITHUB_OUTPUT"
+            else
+              echo "ok=0" >> "$GITHUB_OUTPUT"
+            fi
+          else
+            echo "ok=skip" >> "$GITHUB_OUTPUT"
+            echo "⚠️ 雲端 runner 無 wacli，跳過 WhatsApp 認證檢查"
+          fi
+
+      - name: 判定整體狀態
+        id: verdict
+        run: |
+          FAIL=0
+          [ "${{ steps.site.outputs.ok }}" != "1" ] && FAIL=1
+          [ "${{ steps.data.outputs.code }}" != "200" ] && FAIL=1
+          [ "${{ steps.wa.outputs.ok }}" = "0" ] && FAIL=1
+          echo "fail=$FAIL" >> "$GITHUB_OUTPUT"
+          echo "整體: $([ "$FAIL" = "1" ] && echo FAIL || echo OK)"
+
+      - name: 開 / 追加 GitHub Issue
+        if: steps.verdict.outputs.fail == '1'
         uses: actions/github-script@v7
         with:
           script: |
-            const title = '⚠️ Family Reminder 網站異常';
-            const body = `健康監控探測失敗：網站回應碼 ${process.env.HTTP}（${new Date().toISOString()}）。\n\n請檢查：\n1. GitHub Pages 是否仍在生效（Settings → Pages）\n2. 最近一次 CI/CD 部署是否成功\n3. 如係本地服務問題，請睇 reminder-watchdog 日誌`;
+            const siteOk = `${{ steps.site.outputs.ok }}`;
+            const siteCode = `${{ steps.site.outputs.code }}`;
+            const dataCode = `${{ steps.data.outputs.code }}`;
+            const waOk = `${{ steps.wa.outputs.ok }}`;
+            const lines = [];
+            if (siteOk !== '1') lines.push(`❌ 網站異常 (HTTP ${siteCode})`);
+            if (dataCode !== '200') lines.push(`❌ data.json 異常 (HTTP ${dataCode})`);
+            if (waOk === '0') lines.push(`❌ WhatsApp 未認證`);
+            const body = `健康監控探測失敗 @ ${new Date().toISOString()}：\n` + lines.join('\n') +
+              `\n\n請檢查：\n1. GitHub Pages 是否生效（Settings → Pages）\n2. 最近一次 CI/CD 部署是否成功\n3. data.json raw URL 是否可存取\n4. 本地 WhatsApp / API 請睇 reminder-watchdog + monitor/health-check.js 日誌`;
+            const title = '⚠️ Family Reminder 健康監控異常';
             const { data: issues } = await github.rest.issues.listForRepo({ owner: context.repo.owner, repo: context.repo.repo, state: 'open', per_page: 100 });
             const existing = issues.find(i => i.title === title);
             if (existing) {
@@ -44,5 +99,9 @@ jobs:
             } else {
               await github.rest.issues.create({ owner: context.repo.owner, repo: context.repo.repo, title, body });
             }
-        env:
-          HTTP: ${{ steps.check.outputs.http }}
+
+      - name: 嘗試 WhatsApp 報警（best-effort）
+        if: steps.verdict.outputs.fail == '1'
+        continue-on-error: true
+        run: |
+          node monitor/notify-failure.js --message "🚨 家庭提醒雲端監控異常：網站/數據/WhatsApp 其一失效，請睇 GitHub Issue。" || echo "⚠️ WhatsApp 報警失敗（雲端 runner 無 wacli / 未能連線 localhost）"
