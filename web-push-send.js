@@ -3,7 +3,7 @@
 // 去重狀態寫入 push-state.json（Actions 專屬檔，唔會同前端 UI 編輯撞 409）
 // v3-B 加固：data.json 完全唔寫，消除同前端嘅 SHA 衝突
 const TOKEN = process.env.GITHUB_TOKEN || process.env.GH_TOKEN || process.env.GH_PAT;
-const REPO = process.env.GH_REPO || 'ken851004-afk/family-reminder-cloud';
+const REPO = process.env.GH_REPO || 'aibizlab-hub/family-reminder-cloud';
 const VAPID_PRIVATE = process.env.VAPID_PRIVATE_KEY;
 const VAPID_PUBLIC = process.env.VAPID_PUBLIC_KEY;
 const SUBJECT = 'mailto:family-reminder@example.com';

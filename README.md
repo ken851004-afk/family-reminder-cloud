@@ -8,12 +8,12 @@
 
 ### Windows（雙擊 `install.bat`）
 ```cmd
-curl -o install.bat https://raw.githubusercontent.com/ken851004-afk/family-reminder-cloud/master/install.bat && install.bat
+curl -o install.bat https://raw.githubusercontent.com/aibizlab-hub/family-reminder-cloud/master/install.bat && install.bat
 ```
 
 ### macOS / Linux / Git Bash
 ```bash
-curl -o install.sh https://raw.githubusercontent.com/ken851004-afk/family-reminder-cloud/master/install.sh && bash install.sh
+curl -o install.sh https://raw.githubusercontent.com/aibizlab-hub/family-reminder-cloud/master/install.sh && bash install.sh
 ```
 
 **安裝過程只需 ~3 分鐘**，會自動完成：
@@ -101,4 +101,4 @@ curl -o install.sh https://raw.githubusercontent.com/ken851004-afk/family-remind
 
 ---
 
-**[永久網址](https://ken851004-afk.github.io/family-reminder-cloud/)** · **[源代碼](https://github.com/ken851004-afk/family-reminder-cloud)**
+**[永久網址](https://aibizlab-hub.github.io/family-reminder-cloud/)** · **[源代碼](https://github.com/aibizlab-hub/family-reminder-cloud)**
