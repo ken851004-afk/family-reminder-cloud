@@ -4,7 +4,7 @@
  * 本地自動監控 + 自癒（喺用家部機跑，排程每幾分鐘一次）。
  *
  * 探測：
- *  1) GitHub Pages 線上網站  → HTTP 200 且 HTML 含「家庭提醒系統」
+ *  1) GitHub Pages 線上網站  → HTTP 200 且 HTML 含「HomeMemo」
  *  2) data.json raw URL      → HTTP 200
  *  3) 本地 API :3747         → /healthz（fallback /）回 200
  *  4) wacli doctor           → 輸出含 AUTHENTICATED 即已連線
@@ -36,7 +36,7 @@ const LIVE_URL = process.env.LIVE_URL || 'https://aibizlab-hub.github.io/family-
 const DATA_URL = process.env.DATA_URL || 'https://raw.githubusercontent.com/aibizlab-hub/family-reminder-cloud/master/data.json';
 const API_HOST = '127.0.0.1';
 const API_PORT = process.env.API_PORT || 3747;
-const TITLE_MARK = '家庭提醒系統';
+const TITLE_MARK = 'HomeMemo';
 const ALERT_COOLDOWN_MS = 30 * 60 * 1000; // 30 分鐘內唔重複報同一類
 
 const NODE_EXE = fs.existsSync('C:\\Users\\KEN85\\.workbuddy\\binaries\\node\\versions\\22.22.2\\node.exe')

@@ -9,14 +9,14 @@
 <meta name="theme-color" content="#4f46e5">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>家庭提醒系統</title>
+<title>HomeMemo</title>
 <link rel="stylesheet" href="assets/css/style.css">
 </head>
 <body>
 
 <div class="header">
-  <h1>&#127968; 家庭提醒系統</h1>
-  <p>請回答我們這一家 &#8226; 雲端 24/7</p>
+  <h1>HomeMemo</h1>
+  <p>Family reminders &#8226; always in sync</p>
   <span class="conn-status conn-ok" id="conn-badge">&#9989; 已連接</span>
   <span class="wa-status wa-off" id="wa-badge">&#8987; WhatsApp...</span>
   <button id="btn-push" onclick="togglePushNotif()" style="background:none;border:none;color:#fff;font-size:18px;cursor:pointer;margin-left:8px;opacity:0.8;display:none;" title="通知設定">&#128276;</button>
@@ -49,7 +49,7 @@
 <div class="container" id="main-container">
 
   <div class="wa-banner" id="wa-banner" style="display:none">
-    &#8987; WhatsApp 推送未就緒！請確認本機 <a href="/qr" target="_blank">wacli 已認證</a>（未連線請執行 wacli auth）
+    &#8987; WhatsApp 推送未就緒！請確認 <strong>wacli 已認證</strong>（未連線請執行 <code>wacli auth</code>）
   </div>
 
   <!-- 全部 tab -->
