@@ -23,10 +23,10 @@ jobs:
     timeout-minutes: 5
     steps:
       - name: Checkout（拎 monitor/ 腳本）
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: 開 / 追加 GitHub Issue
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           script: |
             const runId = context.payload.workflow_run.id;

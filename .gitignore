@@ -3,3 +3,7 @@ wa-session/
 data.json.backup
 *.log
 .DS_Store
+# runtime artifacts (含 PII / 狀態，唔落 repo)
+reminder-log.txt
+reminder-state.json
+cloud.log
