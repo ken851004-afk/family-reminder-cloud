@@ -1,0 +1,34 @@
+name: Cloud Reminder Bot (CallMeBot · 24/7 唔使開電腦)
+
+# ⚙️ GitHub 原生定時 — 完全唔使外部觸發、唔使開住部電腦
+# 每 30 分鐘跑一次 (覆蓋 準時 ±25min window，保證必中)
+on:
+  schedule:
+    - cron: '*/30 * * * *'
+  workflow_dispatch:   # 手動 test：GitHub → Actions → 此 workflow → Run workflow
+
+permissions:
+  contents: write
+
+jobs:
+  remind:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'   # Node 22 有 global fetch — 唔使 baileys / wacli
+      - name: Run cloud reminder bot (CallMeBot WhatsApp)
+        env:
+          GITHUB_TOKEN:     ${{ secrets.GITHUB_TOKEN }}
+          GH_PAT:           ${{ secrets.GH_PAT }}
+          CALLMEBOT_KEN:     ${{ secrets.CALLMEBOT_KEN }}
+          CALLMEBOT_EPPIE:   ${{ secrets.CALLMEBOT_EPPIE }}
+          CALLMEBOT_KENNY:   ${{ secrets.CALLMEBOT_KENNY }}
+          CALLMEBOT_ROSANNA: ${{ secrets.CALLMEBOT_ROSANNA }}
+          CALLMEBOT_COFFE:   ${{ secrets.CALLMEBOT_COFFE }}
+          CALLMEBOT_LODOU:   ${{ secrets.CALLMEBOT_LODOU }}
+        run: node cloud-reminder-bot.js
+      # 覆蓋：① 提早 1 日 (09:00 HKT) ② 提早 3 小時 ③ 準時 ④ 每日 07:00 HKT 日程 digest
+      # 全部經 CallMeBot 雲端 WhatsApp 發送，唔使 wacli / baileys / 掃 QR
