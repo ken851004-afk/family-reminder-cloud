@@ -18,7 +18,7 @@
   <h1>HomeMemo</h1>
   <p>Family reminders &#8226; always in sync</p>
   <span class="conn-status conn-ok" id="conn-badge">&#9989; 已連接</span>
-  <span class="wa-status wa-off" id="wa-badge">&#8987; WhatsApp...</span>
+  <span class="wa-status" id="wa-badge">&#128225; WhatsApp</span>
   <button id="btn-push" onclick="togglePushNotif()" style="background:none;border:none;color:#fff;font-size:18px;cursor:pointer;margin-left:8px;opacity:0.8;display:none;" title="通知設定">&#128276;</button>
   <button onclick="toggleDarkMode()" style="background:none;border:none;color:#fff;font-size:18px;cursor:pointer;margin-left:4px;opacity:0.8;" title="切換深色模式">&#127769;</button>
   <button onclick="openSettingsModal()" style="background:none;border:none;color:#fff;font-size:18px;cursor:pointer;margin-left:4px;opacity:0.8;" title="設定 GitHub Token">&#9881;</button>
@@ -582,6 +582,7 @@ var API_BASE_URL = (function() {
   }
   return ''; // production: same origin
 })();
+var IS_CLOUD = location.hostname.indexOf('github.io') >= 0;
 var API_MODE = false; // set to true after login
 var JWT_TOKEN = '';
 var JWT_REFRESH = '';
@@ -971,6 +972,14 @@ function setConnStatus(ok) {
 
 // ===== WhatsApp Status =====
 function checkWAStatus() {
+  var _el = document.getElementById('wa-badge');
+  var _bn = document.getElementById('wa-banner');
+  if (IS_CLOUD) {
+    // Cloud mode: WhatsApp delivery handled by GitHub Actions (cloud-reminder-bot → CallMeBot), no local server needed
+    if (_el) { _el.innerHTML = '\u2601\uFE0F 雲端 WhatsApp'; _el.className = 'wa-status wa-ok'; }
+    if (_bn) _bn.style.display = 'none';
+    return;
+  }
   fetch('/wa-status').then(function(r){return r.json();}).then(function(s){
     var el = document.getElementById('wa-badge');
     var banner = document.getElementById('wa-banner');
@@ -1103,6 +1112,17 @@ function importData(e) {
 
 function sendReminderNow() {
   toast('\u23F3 發送中...');
+  if (IS_CLOUD) {
+    var _t = localStorage.getItem('gh_token') || '';
+    if (!_t) { toast('\u274C 未設定 GitHub Token'); return; }
+    fetch('https://api.github.com/repos/aibizlab-hub/family-reminder-cloud/actions/workflows/cloud-reminder.yml/dispatches', {
+      method:'POST',
+      headers: { 'Authorization':'Bearer '+_t, 'Content-Type':'application/json', 'Accept':'application/vnd.github.v3+json' },
+      body: JSON.stringify({ ref:'master' })
+    }).then(function(r){ toast(r.ok ? '\u2705 已觸發雲端提醒推送' : '\u274C 觸發失敗'); })
+     .catch(function(){ toast('\u274C 發送失敗'); });
+    return;
+  }
   fetch('/send-reminder', { method:'POST' }).then(function(r){return r.json();}).then(function(r){
     toast('\u2705 提醒已發送到群組');
   }).catch(function(){ toast('\u274C 發送失敗'); });
