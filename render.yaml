@@ -5,7 +5,7 @@ services:
     plan: free
     region: singapore
     buildCommand: npm install
-    startCommand: node cloud-server.js
+    startCommand: node cloud-server.js   # 雲端推送已改用本機 wacli；Render(Linux) 冇 wacli 二進位，建議本機用 start-all 執行
     healthCheckPath: /health
     envVars:
       - key: NODE_ENV

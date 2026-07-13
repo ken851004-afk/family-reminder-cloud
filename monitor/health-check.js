@@ -11,7 +11,7 @@
  *
  * 自癒（失敗即重啟對應本地服務）：
  *  - API 離線   → 重啟 server.js（+ cloud-server.js 若原先在跑）
- *  - WA 未連線  → 重啟 local-reminder-service.js（+ cloud-server.js 若原先在跑）
+ *  - WA 未連線  → 重啟 local-reminder-service.js（wacli 推送；cloud-server 已唔再維持 WA 連線）
  *
  * 報警：任何失敗經 notify-failure.js 發 WhatsApp 去 +85262218999
  *       （每類警報 30 分鐘冷卻，避免狂轟）。
@@ -200,8 +200,8 @@ async function main() {
     if (restartService('cloud-server.js', true)) healed.push('cloud-server.js');
   }
   if (failures.includes('wa')) {
+    // cloud-server 已唔再維持 WA 連線（改經 wacli），只重啟 local-reminder-service.js
     if (restartService('local-reminder-service.js', false)) healed.push('local-reminder-service.js');
-    if (restartService('cloud-server.js', true)) healed.push('cloud-server.js');
   }
 
   // ── 報警 ──
