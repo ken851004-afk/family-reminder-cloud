@@ -1,0 +1,24 @@
+# HomeMemo / family-reminder-cloud — Gitleaks 秘密掃描配置
+# 用途：防止 CALLMEBOT / VAPID / GH_PAT 等憑證被硬編碼落公開倉庫
+title = "HomeMemo gitleaks config"
+
+[extend]
+useDefault = true
+
+[[rules]]
+id = "homeMemo-callmebot-key"
+description = "CallMeBot WhatsApp API key（應放 GitHub Secrets，唔好落 code）"
+regex = '''(?i)(CALLMEBOT_[A-Z]+)\s*[=:]\s*['"]?([A-Za-z0-9]{8,})'''
+severity = "high"
+
+[[rules]]
+id = "homeMemo-vapid-key"
+description = "VAPID private/public key（應放 GitHub Secrets）"
+regex = '''(?i)(VAPID_(PRIVATE|PUBLIC)_KEY)\s*[=:]\s*['"]?([A-Za-z0-9_-]{20,})'''
+severity = "high"
+
+[[rules]]
+id = "homeMemo-gh-pat"
+description = "GitHub Personal Access Token（應放 GitHub Secrets）"
+regex = '''(?i)(GH_PAT)\s*[=:]\s*['"]?(ghp_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{30,})'''
+severity = "critical"

@@ -1,0 +1,80 @@
+name: Security Scan
+
+# ════════════════════════════════════════════════════
+# 安全掃描（加性，唔會動到 ci-cd.yml 嘅正常部署）
+# ① Gitleaks 秘密掃描（防 CALLMEBOT / VAPID / GH_PAT 漏落 code）
+# ② npm audit 依賴漏洞掃描（高風險即開 Issue）
+# 掃到問題 → 自動開 / 追加 GitHub Issue 報警（唔阻擋部署，
+#   想變「阻擋式」可將各 job 嘅 continue-on-error 移除）。
+# ════════════════════════════════════════════════════
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+  schedule:
+    - cron: '0 3 * * 1'      # 每週一 03:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+  security-events: write
+
+jobs:
+  # ───────────── ① 秘密掃描 ─────────────
+  secret-scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Gitleaks 秘密掃描
+        id: gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_CONFIG: .gitleaks.toml
+        continue-on-error: true
+
+      - name: 開 / 追加 Issue（掃到秘密）
+        if: steps.gitleaks.outcome == 'failure'
+        uses: actions/github-script@v9
+        with:
+          script: |
+            const title = '🔒 安全掃描：發現疑似秘密 / 憑證';
+            const body = `Gitleaks 喺 push / PR / 週排程掃描中發現疑似硬編碼秘密。\n\n- run: ${context.runId}\n- 時間: ${new Date().toISOString()}\n\n請檢查今次 diff，將憑證移至 GitHub Secrets，必要時輪換。`;
+            const { data: issues } = await github.rest.issues.listForRepo({ owner: context.repo.owner, repo: context.repo.repo, state: 'open', per_page: 50 });
+            const existing = issues.find(i => i.title === title);
+            if (existing) await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: existing.number, body: '再次發現 @ ' + new Date().toISOString() });
+            else await github.rest.issues.create({ owner: context.repo.owner, repo: context.repo.repo, title, body });
+
+  # ───────────── ② 依賴漏洞掃描 ─────────────
+  dependency-scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+
+      - name: npm audit（高風險漏洞）
+        id: audit
+        run: npm audit --audit-level=high
+        continue-on-error: true
+
+      - name: 開 / 追加 Issue（依賴漏洞）
+        if: steps.audit.outcome == 'failure'
+        uses: actions/github-script@v9
+        with:
+          script: |
+            const title = '📦 安全掃描：npm 依賴高風險漏洞';
+            const body = `npm audit 發現高風險依賴漏洞。\n\n- run: ${context.runId}\n- 時間: ${new Date().toISOString()}\n\n請執行 \`npm audit fix\` 或升級受影響套件（Dependabot 會自動開 PR）。`;
+            const { data: issues } = await github.rest.issues.listForRepo({ owner: context.repo.owner, repo: context.repo.repo, state: 'open', per_page: 50 });
+            const existing = issues.find(i => i.title === title);
+            if (existing) await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: existing.number, body: '仍有漏洞 @ ' + new Date().toISOString() });
+            else await github.rest.issues.create({ owner: context.repo.owner, repo: context.repo.repo, title, body });
