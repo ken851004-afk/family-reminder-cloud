@@ -865,8 +865,11 @@ function syncFromAPI() {
   });
 }
 function syncFromGitHub() {
+  var _ghh = { 'Accept': 'application/vnd.github.v3+json' };
+  var _ght = getGHToken();
+  if (_ght) _ghh['Authorization'] = 'Bearer ' + _ght;
   return fetch('https://api.github.com/repos/aibizlab-hub/family-reminder-cloud/contents/data.json', {
-    headers: { 'Authorization': 'Bearer ' + getGHToken(), 'Accept': 'application/vnd.github.v3+json' }
+    headers: _ghh
   }).then(function(r){ return r.json(); })
   .then(function(j){
     var raw = atob(j.content.replace(/\s/g, ''));
@@ -878,20 +881,41 @@ function syncFromGitHub() {
     DATA_SHA = j.sha;
     DATA_LOADED = true;
     API_ONLINE = true; saveLocal();
-    setConnStatus(true);
+    if (_ght) { setConnStatus(true); }
+    else {
+      var _cb = document.getElementById('conn-badge');
+      if (_cb) { _cb.innerHTML = '\u2601\uFE0F 雲端唯讀'; _cb.className = 'conn-status conn-ok'; }
+    }
     autoArchiveExpired();
     renderAll();
     updateHistoryBadge();
   }).catch(function(e){
-    console.log('GitHub sync failed:', e);
-    API_ONLINE = false; setConnStatus(false);
-    if (!DATA.reminders || !DATA.reminders.length) loadLocal();
-    DATA_LOADED = true;  // local fallback also counts as loaded
-    if (!DATA.history) DATA.history = [];
-    autoArchiveExpired();
-    renderAll();
-    updateHistoryBadge();
-    throw e;  // re-throw so callers' .catch() can handle it
+    console.log('GitHub API sync failed, trying raw fallback:', e);
+    return fetch('https://raw.githubusercontent.com/aibizlab-hub/family-reminder-cloud/master/data.json')
+      .then(function(r){ if(!r.ok) throw new Error('raw '+r.status); return r.text(); })
+      .then(function(txt){
+        DATA = JSON.parse(txt);
+        if (!DATA.history) DATA.history = [];
+        if (!DATA.pendingMessages) DATA.pendingMessages = [];
+        DATA_SHA = ''; // unknown via raw; will re-fetch SHA on next write
+        DATA_LOADED = true;
+        API_ONLINE = true; saveLocal();
+        var _cb = document.getElementById('conn-badge');
+        if (_cb) { _cb.innerHTML = '\u2601\uFE0F 雲端唯讀'; _cb.className = 'conn-status conn-ok'; }
+        autoArchiveExpired();
+        renderAll();
+        updateHistoryBadge();
+      })
+      .catch(function(e2){
+        console.log('Raw fallback failed:', e2);
+        API_ONLINE = false; setConnStatus(false);
+        if (!DATA.reminders || !DATA.reminders.length) loadLocal();
+        DATA_LOADED = true;  // local fallback also counts as loaded
+        if (!DATA.history) DATA.history = [];
+        autoArchiveExpired();
+        renderAll();
+        updateHistoryBadge();
+      });
   });
 }
 
