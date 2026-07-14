@@ -64,6 +64,11 @@ jobs:
           for f in index.html sw.js download.html manifest.json robots.txt; do
             [ -f "$f" ] && cp "$f" _site/ || true
           done
+          # 自動將 APP_BUILD 占位符替換為 commit SHA（前端 self-heal 對版用）
+          sed -i "s/__BUILD__/${GITHUB_SHA:0:7}/g" _site/index.html
+          # 自動寫入版本標記（供前端 self-heal 自動 reload）
+          echo "{\"build\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"sha\":\"${GITHUB_SHA:0:7}\"}" > _site/version.json
+          echo "version.json -> $(cat _site/version.json)"
           # 複製子目錄資源（CSS / JS / 圖片等），否則美化後嘅 assets/ 唔會上線
           [ -d assets ] && cp -r assets _site/ || true
           [ -d js ] && cp -r js _site/ || true

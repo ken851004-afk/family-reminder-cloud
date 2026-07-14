@@ -590,6 +590,7 @@ var API_BASE_URL = (function() {
   return ''; // production: same origin
 })();
 var IS_CLOUD = location.hostname.indexOf('github.io') >= 0;
+var APP_BUILD = '__BUILD__'; // replaced by CI with commit sha; drives self-heal auto-reload
 var API_MODE = false; // set to true after login
 var JWT_TOKEN = '';
 var JWT_REFRESH = '';
@@ -1617,6 +1618,19 @@ document.addEventListener('DOMContentLoaded', function() {
   var d1 = document.getElementById('form-date'), d2 = document.getElementById('form-date-end');
   if (d1) d1.addEventListener('change', updateMultiDateCount);
   if (d2) d2.addEventListener('change', updateMultiDateCount);
+  // Self-heal: if a newer build is deployed, auto-reload (no manual refresh needed)
+  (function(){
+    try {
+      fetch('/family-reminder-cloud/version.json?_=' + Date.now(), { cache: 'no-store' })
+        .then(function(r){ return r.ok ? r.json() : null; })
+        .then(function(j){
+          if (j && j.sha && typeof APP_BUILD !== 'undefined' && j.sha !== APP_BUILD) {
+            console.log('[self-heal] newer build ' + j.sha + ' detected, reloading...');
+            location.reload(true);
+          }
+        }).catch(function(){});
+    } catch(e) {}
+  })();
 });
 
 // ===== Modal: Reminder =====
