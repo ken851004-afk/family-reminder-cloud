@@ -12,6 +12,13 @@ self.addEventListener('activate', (event) => {
     caches.keys()
       .then((keys) => Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k))))
       .then(() => self.clients.claim())
+      .then(() => self.clients.matchAll({ includeUncontrolled: true }))
+      .then((clients) => clients.forEach((c) => {
+        // 新 SW 激活時，強制重新整理所有開住嘅舊頁面（自動脫離舊快取）
+        try {
+          if (c.url && c.url.indexOf(self.location.origin + '/family-reminder-cloud') === 0) c.navigate(c.url);
+        } catch (e) {}
+      }))
   );
 });
 
