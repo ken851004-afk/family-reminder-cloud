@@ -591,6 +591,19 @@ var API_BASE_URL = (function() {
 })();
 var IS_CLOUD = location.hostname.indexOf('github.io') >= 0;
 var APP_BUILD = '__BUILD__'; // replaced by CI with commit sha; drives self-heal auto-reload
+
+// iOS web-clip (added to home screen) caches the HTML snapshot aggressively and
+// ignores Cache-Control. Force a per-build cache-busting reload so the user
+// never sees a stale snapshot. Plain Safari (standalone===false) is untouched.
+(function webClipCacheBuster() {
+  try {
+    if (window.navigator.standalone === true && location.search.indexOf('_v=' + APP_BUILD) === -1) {
+      var nb = location.pathname + '?_v=' + APP_BUILD + (location.hash || '');
+      location.replace(nb);
+    }
+  } catch (e) {}
+})();
+
 var API_MODE = false; // set to true after login
 var JWT_TOKEN = '';
 var JWT_REFRESH = '';

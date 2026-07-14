@@ -24,17 +24,34 @@ self.addEventListener('activate', (event) => {
 
 // Network-first for same-origin GET (always serve fresh index.html / assets)
 // Cross-origin (api.github.com) and non-GET requests pass through untouched.
+// CRITICAL: bypass HTTP cache entirely (cache:'no-store' + _sw query) so mobile
+// (especially iOS web clips) NEVER serves a stale cached HTML/CSS/JS.
 self.addEventListener('fetch', (event) => {
   const req = event.request;
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return; // let GitHub API calls go straight to network
 
+  // Build a cache-busting request that ignores HTTP disk cache
+  const busted = new URL(req.url);
+  busted.searchParams.set('_sw', String(Date.now()));
+  const noStoreReq = new Request(busted.toString(), {
+    method: 'GET',
+    headers: req.headers,
+    mode: req.mode,
+    credentials: req.credentials,
+    redirect: req.redirect,
+    cache: 'no-store'
+  });
+
   event.respondWith(
-    fetch(req)
+    fetch(noStoreReq)
       .then((res) => {
-        const copy = res.clone();
-        caches.open(CACHE_NAME).then((c) => c.put(req, copy));
+        // Only cache successful 200 responses (don't pollute cache with errors)
+        if (res && res.status === 200) {
+          const copy = res.clone();
+          caches.open(CACHE_NAME).then((c) => c.put(req, copy));
+        }
         return res;
       })
       .catch(() => caches.match(req))
