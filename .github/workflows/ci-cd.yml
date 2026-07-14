@@ -68,6 +68,8 @@ jobs:
           sed -i "s/__BUILD__/${GITHUB_SHA:0:7}/g" _site/index.html
           # 同步輸出 home.html 作為防緩存專用入口（全新檔名，iOS/web-clip 無舊快取、無舊 SW 控制）
           cp _site/index.html _site/home.html
+          # ★ 關鍵：將 data.json 部署到 GitHub Pages 同源路徑，前端優先讀同源（無 CORS、無外部網絡依賴，iOS 一定讀到）
+          [ -f data.json ] && cp data.json _site/data.json || echo "(master 暫無 data.json，跳過同源副本)"
           # 自動寫入版本標記（供前端 self-heal 自動 reload）
           echo "{\"build\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"sha\":\"${GITHUB_SHA:0:7}\"}" > _site/version.json
           echo "version.json -> $(cat _site/version.json)"
