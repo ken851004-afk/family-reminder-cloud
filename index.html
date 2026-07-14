@@ -1663,10 +1663,21 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(function(r){ return r.ok ? r.json() : null; })
         .then(function(j){
           if (j && j.sha && typeof APP_BUILD !== 'undefined' && j.sha !== APP_BUILD) {
-            console.log('[self-heal] newer build ' + j.sha + ' detected, reloading...');
-            location.reload(true);
+            console.log('[self-heal] newer build ' + j.sha + ' detected, repairing...');
+            repairSWThenReload();
           }
         }).catch(function(){});
+    } catch(e) {}
+  })();
+  // Floating repair button (one-tap escape from stuck service-worker cache)
+  (function(){
+    try {
+      var b = document.createElement('button');
+      b.textContent = '🔧 修復';
+      b.title = '強制清除快取並重新載入';
+      b.setAttribute('onclick', 'forceRepair()');
+      b.style.cssText = 'position:fixed;right:10px;bottom:10px;z-index:9999;background:#e74c3c;color:#fff;border:0;border-radius:8px;padding:8px 12px;font-size:13px;box-shadow:0 2px 6px rgba(0,0,0,.3);cursor:pointer';
+      document.body.appendChild(b);
     } catch(e) {}
   })();
 });
@@ -2174,7 +2185,8 @@ var _swReg = null;
 // Register Service Worker
 function registerSW() {
   if (!('serviceWorker' in navigator)) return;
-  navigator.serviceWorker.register('/family-reminder-cloud/sw.js', { scope: '/family-reminder-cloud/' })
+  var swUrl = '/family-reminder-cloud/sw.js?v=' + (typeof APP_BUILD !== 'undefined' ? APP_BUILD : Date.now());
+  navigator.serviceWorker.register(swUrl, { scope: '/family-reminder-cloud/' })
     .then(function(reg) {
       _swReg = reg;
       console.log('SW registered');
@@ -2182,6 +2194,23 @@ function registerSW() {
     })
     .catch(function(e) { console.log('SW reg failed:', e); });
 }
+
+// Force-clear all service workers and hard-reload (escape hatch for stuck cache)
+function repairSWThenReload() {
+  try {
+    if (navigator.serviceWorker && navigator.serviceWorker.getRegistrations) {
+      navigator.serviceWorker.getRegistrations().then(function(regs) {
+        Promise.all(regs.map(function(r) { return r.unregister(); })).then(function() {
+          console.log('[repair] all SW unregistered, reloading');
+          location.reload(true);
+        });
+      });
+      return;
+    }
+  } catch (e) {}
+  location.reload(true);
+}
+function forceRepair() { repairSWThenReload(); }
 
 // Show notification bell
 function initPushUI() {
