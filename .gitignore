@@ -7,3 +7,9 @@ data.json.backup
 reminder-log.txt
 reminder-state.json
 cloud.log
+
+# secrets — never commit real credentials
+.env
+.env.*
+!.env.example
+vapid.json

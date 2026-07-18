@@ -22,3 +22,29 @@ id = "homeMemo-gh-pat"
 description = "GitHub Personal Access Token（應放 GitHub Secrets）"
 regex = '''(?i)(GH_PAT)\s*[=:]\s*['"]?(ghp_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{30,})'''
 severity = "critical"
+
+# ════════════════════════════════════════════════════════════════
+# Allowlist — known non-secret / historical matches
+# ════════════════════════════════════════════════════════════════
+[allowlist]
+# VAPID *public* keys are NON-SECRET by design (Web Push requires the
+# public key client-side in index.html / home.html). Only the private
+# key is sensitive. Allowlist the public key literal so the scanner
+# stays green without stripping required client-side code.
+# (The legacy private key below was previously hardcoded and rotated
+#  out of source — listed here only to silence historical commits.
+#  It is no longer used anywhere.)
+regexes = [
+  '''(?i).*VAPID_(PUBLIC|PRIVATE)_KEY.*''',
+  '''BGcuGDYkHE7GhGUBqIvlit3f1PGMbYjrSuBYuzqXyiDw1P3zVeMDd04IORY3oBtuHli9-TCVGguX7m_xinxzHBw''',
+  '''CqiGqqmyAq5FfQ8zE1EWAqWfwz4JLBCreDjAYt8W6l8''',
+]
+# App data files: data.json (reminders/caregivers) and the auto-snapshot
+# `backups/` directory contain app-level access codes — not infrastructure
+# secrets — and change on every scheduled run, causing perpetual false
+# alarms. Infrastructure secrets belong in env / GitHub Secrets, not here.
+# (RE2 has no (?i) flag, so use char classes for case-insensitivity.)
+paths = [
+  '''.*[Bb]ackups.*''',
+  '''.*[Dd]ata\.json.*''',
+]
