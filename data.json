@@ -212,6 +212,19 @@
       "caregiver": "COFFE",
       "note": "",
       "repeat": "none"
+    },
+    {
+      "id": "r1784387587534arh",
+      "notified": false,
+      "caregiverNotified1d": false,
+      "caregiverNotified3h": false,
+      "name": "跳舞表演",
+      "date": "2026-08-30",
+      "time": "17:00",
+      "category": "special",
+      "caregiver": "ALL",
+      "note": "",
+      "repeat": "none"
     }
   ],
   "birthdays": [
@@ -531,17 +544,5 @@
     "email_template": "",
     "email_to": ""
   },
-  "pendingMessages": [],
-  "_lastArchived": [
-    "r1783166093924ovt"
-  ],
-  "groupNotifications": [
-    {
-      "id": "gn-1784346978076",
-      "reminderName": "Obi老師 跳舞",
-      "oldCaregiver": "COFFE",
-      "newCaregiver": "KEN",
-      "changedAt": "2026-07-18T03:56:18.076Z"
-    }
-  ]
+  "pendingMessages": []
 }
