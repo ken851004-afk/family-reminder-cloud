@@ -143,19 +143,6 @@
       ]
     },
     {
-      "id": "r1783166093924ovt",
-      "notified": false,
-      "caregiverNotified1d": false,
-      "caregiverNotified3h": false,
-      "name": "小嘟家",
-      "date": "2026-07-17",
-      "time": "12:00",
-      "category": "activity",
-      "caregiver": "KEN",
-      "note": "",
-      "repeat": "none"
-    },
-    {
       "id": "r1783577708123bid",
       "notified": false,
       "caregiverNotified1d": false,
@@ -515,6 +502,20 @@
       "note": "",
       "repeat": "none",
       "archivedAt": "2026-07-15T16:58:13.373Z"
+    },
+    {
+      "id": "r1783166093924ovt",
+      "notified": false,
+      "caregiverNotified1d": false,
+      "caregiverNotified3h": false,
+      "name": "小嘟家",
+      "date": "2026-07-17",
+      "time": "12:00",
+      "category": "activity",
+      "caregiver": "KEN",
+      "note": "",
+      "repeat": "none",
+      "archivedAt": "2026-07-18T03:56:09.591Z"
     }
   ],
   "_deletedIds": [],
@@ -530,5 +531,8 @@
     "email_template": "",
     "email_to": ""
   },
-  "pendingMessages": []
+  "pendingMessages": [],
+  "_lastArchived": [
+    "r1783166093924ovt"
+  ]
 }
