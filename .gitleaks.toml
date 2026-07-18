@@ -8,19 +8,21 @@ useDefault = true
 [[rules]]
 id = "homeMemo-callmebot-key"
 description = "CallMeBot WhatsApp API key（應放 GitHub Secrets，唔好落 code）"
-regex = '''(?i)(CALLMEBOT_[A-Z]+)\s*[=:]\s*['"]?([A-Za-z0-9]{8,})'''
+# NOTE: use [ \t]* not \s* — RE2's \s matches \n, which would let the rule
+# span line breaks and falsely grab the NEXT key name as a "value".
+regex = '''(?i)(CALLMEBOT_[A-Z]+)[ \t]*[=:][ \t]*['"]?([A-Za-z0-9_-]{8,})'''
 severity = "high"
 
 [[rules]]
 id = "homeMemo-vapid-key"
 description = "VAPID private/public key（應放 GitHub Secrets）"
-regex = '''(?i)(VAPID_(PRIVATE|PUBLIC)_KEY)\s*[=:]\s*['"]?([A-Za-z0-9_-]{20,})'''
+regex = '''(?i)(VAPID_(PRIVATE|PUBLIC)_KEY)[ \t]*[=:][ \t]*['"]?([A-Za-z0-9_-]{20,})'''
 severity = "high"
 
 [[rules]]
 id = "homeMemo-gh-pat"
 description = "GitHub Personal Access Token（應放 GitHub Secrets）"
-regex = '''(?i)(GH_PAT)\s*[=:]\s*['"]?(ghp_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{30,})'''
+regex = '''(?i)(GH_PAT)[ \t]*[=:][ \t]*['"]?(ghp_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{30,})'''
 severity = "critical"
 
 # ════════════════════════════════════════════════════════════════
@@ -36,8 +38,13 @@ severity = "critical"
 #  It is no longer used anywhere.)
 regexes = [
   '''(?i).*VAPID_(PUBLIC|PRIVATE)_KEY.*''',
+  # legacy (compromised) keypair — listed only to silence historical commits
   '''BGcuGDYkHE7GhGUBqIvlit3f1PGMbYjrSuBYuzqXyiDw1P3zVeMDd04IORY3oBtuHli9-TCVGguX7m_xinxzHBw''',
   '''CqiGqqmyAq5FfQ8zE1EWAqWfwz4JLBCreDjAYt8W6l8''',
+  # current (rotated 2026-07-19) keypair — public key is non-secret by design;
+  # private key literal listed defensively in case .env is ever scanned
+  '''BMXfjmwf83dWRooUSAD1W2HmS-vyGVmVGOYFEfzJNziK4w2OXYtqBU1AyhdSMF0JL1jds03sGF7OXSmL9VL1-2I''',
+  '''rLtc5RJhKIYNxPetBt992X3kI5Pt2N43EsuuflKLGGs''',
 ]
 # App data files: data.json (reminders/caregivers) and the auto-snapshot
 # `backups/` directory contain app-level access codes — not infrastructure
