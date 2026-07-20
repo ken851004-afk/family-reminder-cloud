@@ -172,19 +172,6 @@
       "repeat": "none"
     },
     {
-      "id": "r1783583145890fck",
-      "notified": false,
-      "caregiverNotified1d": false,
-      "caregiverNotified3h": false,
-      "name": "Leospk",
-      "date": "2026-07-19",
-      "time": "11:00",
-      "category": "activity",
-      "caregiver": "KEN",
-      "note": "",
-      "repeat": "none"
-    },
-    {
       "id": "r1784107782087654",
       "notified": false,
       "caregiverNotified1d": false,
@@ -529,6 +516,20 @@
       "note": "",
       "repeat": "none",
       "archivedAt": "2026-07-18T03:56:09.591Z"
+    },
+    {
+      "id": "r1783583145890fck",
+      "notified": false,
+      "caregiverNotified1d": false,
+      "caregiverNotified3h": false,
+      "name": "Leospk",
+      "date": "2026-07-19",
+      "time": "11:00",
+      "category": "activity",
+      "caregiver": "KEN",
+      "note": "",
+      "repeat": "none",
+      "archivedAt": "2026-07-20T01:58:28.358Z"
     }
   ],
   "_deletedIds": [],
@@ -545,13 +546,7 @@
     "email_to": ""
   },
   "pendingMessages": [],
-  "groupNotifications": [
-    {
-      "id": "gn-1784387595071",
-      "reminderName": "Obi老師 跳舞",
-      "oldCaregiver": "KEN",
-      "newCaregiver": "COFFE",
-      "changedAt": "2026-07-18T15:13:15.071Z"
-    }
+  "_lastArchived": [
+    "r1783583145890fck"
   ]
 }
