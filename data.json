@@ -212,19 +212,6 @@
       "caregiver": "ALL",
       "note": "",
       "repeat": "none"
-    },
-    {
-      "id": "r178451494939559f",
-      "notified": false,
-      "caregiverNotified1d": false,
-      "caregiverNotified3h": false,
-      "name": "iPad 英文",
-      "date": "2026-07-20",
-      "time": "14:00",
-      "category": "class",
-      "caregiver": "COFFE",
-      "note": "",
-      "repeat": "none"
     }
   ],
   "birthdays": [
@@ -542,21 +529,7 @@
       "caregiver": "KEN",
       "note": "",
       "repeat": "none",
-      "archivedAt": "2026-07-20T02:34:13.874Z"
-    },
-    {
-      "id": "r1783583145890fck",
-      "notified": false,
-      "caregiverNotified1d": false,
-      "caregiverNotified3h": false,
-      "name": "Leospk",
-      "date": "2026-07-19",
-      "time": "11:00",
-      "category": "activity",
-      "caregiver": "KEN",
-      "note": "",
-      "repeat": "none",
-      "archivedAt": "2026-07-20T02:35:27.115Z"
+      "archivedAt": "2026-07-20T02:36:41.431Z"
     }
   ],
   "_deletedIds": [],
