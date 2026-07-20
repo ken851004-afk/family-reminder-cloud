@@ -225,6 +225,19 @@
       "caregiver": "COFFE",
       "note": "",
       "repeat": "none"
+    },
+    {
+      "id": "r1784515221100zc9",
+      "notified": false,
+      "caregiverNotified1d": false,
+      "caregiverNotified3h": false,
+      "name": "iPad 英文",
+      "date": "2026-07-21",
+      "time": "09:00",
+      "category": "class",
+      "caregiver": "EPPIE",
+      "note": "",
+      "repeat": "none"
     }
   ],
   "birthdays": [
