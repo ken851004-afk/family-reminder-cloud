@@ -212,19 +212,6 @@
       "caregiver": "ALL",
       "note": "",
       "repeat": "none"
-    },
-    {
-      "id": "r1784621689166ma8",
-      "notified": false,
-      "caregiverNotified1d": false,
-      "caregiverNotified3h": false,
-      "name": "查閱刑事定罪紀錄資料 - 新申請 確認預約  預約編號: 08012604007218   預約時間: 2026-09-01 11:00:00",
-      "date": "2026-09-01",
-      "time": "11:00",
-      "category": "work",
-      "caregiver": "KEN",
-      "note": "身份證",
-      "repeat": "none"
     }
   ],
   "birthdays": [
@@ -542,21 +529,7 @@
       "caregiver": "KEN",
       "note": "",
       "repeat": "none",
-      "archivedAt": "2026-07-21T08:15:13.068Z"
-    },
-    {
-      "id": "r1783583145890fck",
-      "notified": false,
-      "caregiverNotified1d": false,
-      "caregiverNotified3h": false,
-      "name": "Leospk",
-      "date": "2026-07-19",
-      "time": "11:00",
-      "category": "activity",
-      "caregiver": "KEN",
-      "note": "",
-      "repeat": "none",
-      "archivedAt": "2026-07-21T08:18:36.150Z"
+      "archivedAt": "2026-07-21T11:24:19.338Z"
     }
   ],
   "_deletedIds": [],
