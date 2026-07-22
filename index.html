@@ -886,13 +886,32 @@ function fetchWithTimeout(url, opts, ms) {
   return fetch(url, opts).then(function(r) { clearTimeout(id); return r; }, function(e) { clearTimeout(id); throw e; });
 }
 
+function mergeLocalItems(localRem, localBday) {
+  if (!DATA.reminders) DATA.reminders = [];
+  var ids = {};
+  DATA.reminders.forEach(function(r){ if (r && r.id) ids[r.id] = true; });
+  (localRem || []).forEach(function(r){
+    if (r && r.id && !ids[r.id]) { DATA.reminders.push(r); ids[r.id] = true; }
+  });
+  if (localBday && localBday.length) {
+    if (!DATA.birthdays) DATA.birthdays = [];
+    localBday.forEach(function(b){
+      if (b && b.name && !DATA.birthdays.some(function(x){ return x.name === b.name; })) DATA.birthdays.push(b);
+    });
+  }
+}
+
 function syncFromGitHub() {
+  // 修復：capture 本地已新增但未同步嘅項（reload 後唔會被雲端舊版 overwrite）
+  var _localReminders = (DATA && DATA.reminders) ? DATA.reminders.filter(function(r){ return r && r.id; }) : [];
+  var _localBirthdays = (DATA && DATA.birthdays) ? DATA.birthdays.slice() : [];
   // ★ 優先：GitHub Pages 同源 data.json（無 CORS、無外部網絡依賴，移動端 iOS 一定能讀到）
   var sameOrigin = location.origin + '/family-reminder-cloud/data.json';
   return fetchWithTimeout(sameOrigin, { cache: 'no-store' }, 8000)
     .then(function(r){ if(!r.ok) throw new Error('same-origin '+r.status); return r.json(); })
     .then(function(D){
       DATA = D;
+      mergeLocalItems(_localReminders, _localBirthdays);
       if (!DATA.history) DATA.history = [];
       if (!DATA.pendingMessages) DATA.pendingMessages = [];
       DATA_SHA = '';  // 同源無 SHA，寫回時重新 fetch
@@ -916,6 +935,7 @@ function syncFromGitHub() {
           var bytes = new Uint8Array(raw.length);
           for (var i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i);
           DATA = JSON.parse(new TextDecoder('utf-8').decode(bytes));
+          mergeLocalItems(_localReminders, _localBirthdays);
           if (!DATA.history) DATA.history = [];
           if (!DATA.pendingMessages) DATA.pendingMessages = [];
           DATA_SHA = j.sha;
@@ -933,6 +953,7 @@ function syncFromGitHub() {
             .then(function(r){ if(!r.ok) throw new Error('raw '+r.status); return r.text(); })
             .then(function(txt){
               DATA = JSON.parse(txt);
+              mergeLocalItems(_localReminders, _localBirthdays);
               if (!DATA.history) DATA.history = [];
               if (!DATA.pendingMessages) DATA.pendingMessages = [];
               DATA_SHA = '';
@@ -987,7 +1008,16 @@ function pushToGitHub(retryCount) {
   retryCount = retryCount || 0;
   var token = getGHToken();
   if (!DATA_LOADED) { console.log('Data not loaded yet, skip push'); return Promise.resolve(false); }
-  if (!token || !DATA_SHA) { console.log('No token or SHA, skip push'); return Promise.resolve(false); }
+  if (!token) { console.log('No token, skip push'); return Promise.resolve(false); }
+  if (!DATA_SHA) {
+    // 同源讀取無 SHA：先經 API 攞 SHA 再寫（需要 token）
+    return fetch('https://api.github.com/repos/aibizlab-hub/family-reminder-cloud/contents/data.json', {
+      headers: { 'Authorization': 'Bearer ' + token, 'Accept': 'application/vnd.github.v3+json' }
+    }).then(function(r){ return r.json(); }).then(function(j){
+      if (j && j.sha) { DATA_SHA = j.sha; return pushToGitHub(retryCount); }
+      console.log('No SHA from API, skip push'); return Promise.resolve(false);
+    }).catch(function(e){ console.log('SHA fetch failed:', e); return Promise.resolve(false); });
+  }
   var jsonStr = JSON.stringify(DATA, null, 2);
   var bytes = new TextEncoder().encode(jsonStr);
   var binary = '';
