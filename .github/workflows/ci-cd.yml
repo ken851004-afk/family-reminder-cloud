@@ -7,8 +7,9 @@ name: CI/CD Pipeline
 # 你（用家）完全唔使郁手：改完 code push 就去晒，壞嘢唔會上 live。
 #
 # 2026-07-19 增強：validate 加入「公開發佈零 PII 閘門」
-#   - 掃描 CHAN TAK KIN / KEN851004 / ken851004 / 生日 等身份字串
+#   - 掃描身份字串（真實姓名 / 舊 GitHub 帳號 / 出生日期 等）
 #   - 排除 data.json 與 backups/（家庭電話等必要資料，唔可誤判）
+#   - 禁字以 base64 儲存於下方陣列，避免本檔自身洩漏明文 PII
 #   - 一旦命中即 abort 部署，確保私隱唔會出街
 # ════════════════════════════════════════════════════════════════
 
@@ -59,16 +60,18 @@ jobs:
         shell: bash
         run: |
           echo "scanning for forbidden identity PII (excluding data.json, backups)..."
-          forbidden=(
-            "CHAN TAK KIN"
-            "KEN851004"
-            "ken851004"
-            "851004"
-            "1985-10-04"
-            "1985/10/04"
+          # 禁字以 base64 儲存，避免本 workflow 檔自身出現明文 PII（仍守護公開零 PII 規則）
+          b64_patterns=(
+            "Q0hBTiBUQUsgS0lO"   # 真實姓名
+            "S0VOODUxMDA0"       # 舊 GitHub 帳號（大寫）
+            "a2VuODUxMDA0"       # 舊 GitHub 帳號（細寫）
+            "ODUxMDA0"           # 出生編號片段
+            "MTk4NS0xMC0wNA=="   # 出生日期（短橫）
+            "MTk4NS8xMC8wNA=="   # 出生日期（斜槓）
           )
           hit=0
-          for p in "${forbidden[@]}"; do
+          for b in "${b64_patterns[@]}"; do
+            p=$(printf '%s' "$b" | base64 -d)
             if grep -rIl --exclude=data.json --exclude-dir=.git --exclude-dir=backups --exclude-dir=.github -e "$p" . ; then
               echo "::error::PII guard triggered: $p"
               hit=1
