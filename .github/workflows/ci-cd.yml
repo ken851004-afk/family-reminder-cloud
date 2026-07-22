@@ -69,7 +69,7 @@ jobs:
           )
           hit=0
           for p in "${forbidden[@]}"; do
-            if grep -rIl --exclude=data.json --exclude-dir=.git --exclude-dir=backups -e "$p" . ; then
+            if grep -rIl --exclude=data.json --exclude-dir=.git --exclude-dir=backups --exclude-dir=.github -e "$p" . ; then
               echo "::error::PII guard triggered: $p"
               hit=1
             fi
