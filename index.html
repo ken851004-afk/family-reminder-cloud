@@ -552,7 +552,7 @@ function forceRefreshData() {
   status.textContent = '';
   status.className = 'sync-status';
   DATA_LOADED = false;
-  DATA = { reminders: [], birthdays: [], history: [] };
+  loadLocal();  // 修復：手動重整前先載本地項，syncFromGitHub 會 merge 保留本地新增（唔會一撳重整就冇咗）
   syncFromGitHub().then(function() {
     btn.classList.remove('loading');
     btn.textContent = '\u{1F260} 重新整理資料';
@@ -813,6 +813,7 @@ function saveLocal() {
 
 // ===== Sync =====
 function syncFromServer() {
+  loadLocal();  // 修復：startup 先載返本地已新增但未同步嘅項；syncFromGitHub 會 merge 保留，唔會 reload 後消失
   if (isAuthenticated()) {
     syncFromAPI();
   } else {
