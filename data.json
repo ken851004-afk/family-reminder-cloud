@@ -212,6 +212,22 @@
       "caregiver": "ALL",
       "note": "",
       "repeat": "none"
+    },
+    {
+      "id": "r1784684407605t1u",
+      "notified": false,
+      "caregiverNotified1d": false,
+      "caregiverNotified3h": false,
+      "name": "UBER",
+      "date": "2026-09-01",
+      "time": "11:00",
+      "category": "work",
+      "caregiver": "KEN",
+      "note": "灣仔軍器警處",
+      "details": [
+        "08012604007218"
+      ],
+      "repeat": "none"
     }
   ],
   "birthdays": [
