@@ -603,5 +603,6 @@
     "email_template": "",
     "email_to": ""
   },
-  "pendingMessages": []
+  "pendingMessages": [],
+  "digestSentDate": "2026-07-23"
 }
