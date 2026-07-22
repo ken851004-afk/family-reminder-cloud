@@ -257,6 +257,19 @@
       "repeatDays": [
         0
       ]
+    },
+    {
+      "id": "r1784717168217sqk",
+      "notified": false,
+      "caregiverNotified1d": false,
+      "caregiverNotified3h": false,
+      "name": "數學補堂",
+      "date": "2026-07-23",
+      "time": "16:00",
+      "category": "class",
+      "caregiver": "COFFE",
+      "note": "荷里活地下 中銀隔離",
+      "repeat": "none"
     }
   ],
   "birthdays": [
