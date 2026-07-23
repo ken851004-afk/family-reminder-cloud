@@ -239,7 +239,7 @@
       "time": "12:00",
       "category": "medical",
       "caregiver": "KEN",
-      "note": "APM",
+      "note": "APM 1608",
       "repeat": "none"
     },
     {
@@ -603,6 +603,5 @@
     "email_template": "",
     "email_to": ""
   },
-  "pendingMessages": [],
-  "digestSentDate": "2026-07-23"
+  "pendingMessages": []
 }
