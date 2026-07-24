@@ -236,8 +236,8 @@
       "caregiverNotified3h": false,
       "name": "我湊揸揸",
       "date": "2026-07-31",
-      "time": "11:30",
-      "category": "other",
+      "time": "15:00",
+      "category": "class",
       "caregiver": "KEN",
       "note": "",
       "repeat": "none"
@@ -586,37 +586,6 @@
       "caregiver": "KEN",
       "note": "APM 1608",
       "repeat": "none",
-      "archivedAt": "2026-07-24T16:55:13.039Z"
-    },
-    {
-      "id": "r1783163681885r6d",
-      "notified": false,
-      "caregiverNotified1d": false,
-      "caregiverNotified3h": false,
-      "name": "VICTOR",
-      "date": "2026-07-10",
-      "time": "17:00",
-      "category": "work",
-      "caregiver": "KEN",
-      "note": "",
-      "repeat": "weekly",
-      "repeatDays": [
-        5
-      ],
-      "archivedAt": "2026-07-24T16:55:29.646Z"
-    },
-    {
-      "id": "r17847109325283uy",
-      "notified": false,
-      "caregiverNotified1d": false,
-      "caregiverNotified3h": false,
-      "name": "天炙",
-      "date": "2026-07-24",
-      "time": "12:00",
-      "category": "medical",
-      "caregiver": "KEN",
-      "note": "APM 1608",
-      "repeat": "none",
       "archivedAt": "2026-07-24T16:56:12.969Z"
     },
     {
@@ -668,8 +637,5 @@
       "r1783163681885r6d"
     ]
   },
-  "pendingMessages": [],
-  "_lastArchived": [
-    "r17847109325283uy"
-  ]
+  "pendingMessages": []
 }
