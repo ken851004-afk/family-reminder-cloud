@@ -257,19 +257,6 @@
       "repeatDays": [
         0
       ]
-    },
-    {
-      "id": "r1784717168217sqk",
-      "notified": false,
-      "caregiverNotified1d": false,
-      "caregiverNotified3h": false,
-      "name": "數學補堂",
-      "date": "2026-07-23",
-      "time": "16:00",
-      "category": "class",
-      "caregiver": "COFFE",
-      "note": "荷里活地下 中銀隔離",
-      "repeat": "none"
     }
   ],
   "birthdays": [
@@ -588,6 +575,20 @@
       "note": "",
       "repeat": "none",
       "archivedAt": "2026-07-21T18:01:02.155Z"
+    },
+    {
+      "id": "r1784717168217sqk",
+      "notified": false,
+      "caregiverNotified1d": false,
+      "caregiverNotified3h": false,
+      "name": "數學補堂",
+      "date": "2026-07-23",
+      "time": "16:00",
+      "category": "class",
+      "caregiver": "COFFE",
+      "note": "荷里活地下 中銀隔離",
+      "repeat": "none",
+      "archivedAt": "2026-07-24T01:58:48.470Z"
     }
   ],
   "_deletedIds": [],
@@ -604,5 +605,7 @@
     "email_to": ""
   },
   "pendingMessages": [],
-  "digestSentDate": "2026-07-24"
+  "_lastArchived": [
+    "r1784717168217sqk"
+  ]
 }
