@@ -244,6 +244,19 @@
       "repeatDays": [
         5
       ]
+    },
+    {
+      "id": "r17849121755382aj",
+      "notified": false,
+      "caregiverNotified1d": false,
+      "caregiverNotified3h": false,
+      "name": "我湊揸揸",
+      "date": "2026-07-31",
+      "time": "11:30",
+      "category": "other",
+      "caregiver": "KEN",
+      "note": "",
+      "repeat": "none"
     }
   ],
   "birthdays": [
